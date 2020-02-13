@@ -1,13 +1,9 @@
-#[macro_use]
 extern crate bitflags;
 
 mod registers;
 
 use registers::*;
-use std::error::Error;
 use std::fs;
-use std::io::prelude::*;
-use std::path::Path;
 
 #[allow(dead_code)]
 
@@ -32,14 +28,34 @@ impl Cpu {
         }
     }
     pub fn mem_read_byte<T: CpuContext>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
-        ctx.mem_read_byte(((seg as u32) << 4) | addr as u32)
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
+        ctx.mem_read_byte(masked_addr)
     }
     pub fn mem_write_byte<T: CpuContext>(&mut self, ctx: &mut T, seg: u16, addr: u16, value: u8) {
-        ctx.mem_write_byte(((seg as u32) << 4) | addr as u32, value);
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
+        ctx.mem_write_byte(masked_addr, value)
+    }
+
+    pub fn mem_read_word<T: CpuContext>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u16 {
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
+        let byte1 = ctx.mem_read_byte(masked_addr) as u16;
+        let byte2 = (ctx.mem_read_byte((masked_addr + 1) & 0xfffff) as u16) << 8;
+        byte1 | byte2
     }
 
     pub fn tick<T: CpuContext>(&mut self, ctx: &mut T) {
-        println!("Opcode {:#02x}",self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip));
+        self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
+        println!("Opcode {:#02x}", self.opcode);
+        match self.opcode {
+            0xea => {
+                println!("jmp far");
+                let offset = self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip + 1);
+                let segment = self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip + 3);
+                self.regs.writeseg16(SegReg::CS, segment);
+                self.regs.ip = offset;
+            },
+            _ => panic!("Unhandled opcode!"),
+        }
     }
 }
 
@@ -104,5 +120,6 @@ impl IbmPc5150Machine {
 fn main() {
     let mut machine = IbmPc5150Machine::new();
 
+    machine.cpu.tick(&mut machine.hardware);
     machine.cpu.tick(&mut machine.hardware);
 }
