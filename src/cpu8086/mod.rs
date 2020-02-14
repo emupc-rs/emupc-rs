@@ -2,7 +2,7 @@ use crate::registers::*;
 
 pub mod registers;
 
-pub trait CpuContext {
+pub trait Cpu8086Context {
     fn mem_read_byte(&mut self, addr: u32) -> u8;
     fn mem_write_byte(&mut self, addr: u32, value: u8);
     fn io_read_byte(&mut self, addr: u16) -> u8;
@@ -10,35 +10,35 @@ pub trait CpuContext {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Cpu {
+pub struct Cpu8086 {
     pub regs : Registers,
     pub opcode : u8,
 }
 
-impl Cpu {
-    pub fn new() -> Cpu {
-        Cpu {
+impl Cpu8086 {
+    pub fn new() -> Cpu8086 {
+        Cpu8086 {
             regs: Registers::new(),
             opcode: 0,
         }
     }
-    pub fn mem_read_byte<T: CpuContext>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
+    pub fn mem_read_byte<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
         let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
         ctx.mem_read_byte(masked_addr)
     }
-    pub fn mem_write_byte<T: CpuContext>(&mut self, ctx: &mut T, seg: u16, addr: u16, value: u8) {
+    pub fn mem_write_byte<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16, value: u8) {
         let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
         ctx.mem_write_byte(masked_addr, value)
     }
 
-    pub fn mem_read_word<T: CpuContext>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u16 {
+    pub fn mem_read_word<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u16 {
         let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
         let lo = ctx.mem_read_byte(masked_addr);
         let hi = ctx.mem_read_byte(masked_addr.wrapping_add(1) & 0xfffff);
         u16::from_le_bytes([lo, hi])
     }
 
-    pub fn tick<T: CpuContext>(&mut self, ctx: &mut T) {
+    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!("Opcode {:#02x} CS {:#04x} IP {:#04x}", self.opcode, self.regs.readseg16(SegReg::CS), self.regs.ip);
         match self.opcode {
