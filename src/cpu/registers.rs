@@ -14,6 +14,7 @@ bitflags!(
         const INTERRUPT = 0x0200;
         const DIRECTION = 0x0400;
         const OVERFLOW = 0x0800;
+        const DEFAULT = 0xf002;
     }
 );
 

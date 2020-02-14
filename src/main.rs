@@ -66,6 +66,8 @@ impl IbmPc5150Machine {
 fn main() {
     let mut machine = IbmPc5150Machine::new();
 
-    machine.cpu.tick(&mut machine.hardware);
-    machine.cpu.tick(&mut machine.hardware);
+    //machine.cpu.tick(&mut machine.hardware);
+    loop {
+        machine.cpu.tick(&mut machine.hardware);
+    }
 }
