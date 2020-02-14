@@ -17,7 +17,7 @@ impl IbmPc5150Machine {
     pub fn new() -> IbmPc5150Machine {
         IbmPc5150Machine {
             cpu: Cpu8086::new(),
-            hardware: IbmPc5150Hardware::new()
+            hardware: IbmPc5150Hardware::new(),
         }
     }
 }
@@ -32,7 +32,7 @@ impl IbmPcAtMachine {
     pub fn new() -> IbmPcAtMachine {
         IbmPcAtMachine {
             cpu: Cpu286::new(),
-            hardware: IbmPcAtHardware::new()
+            hardware: IbmPcAtHardware::new(),
         }
     }
 }

@@ -73,16 +73,8 @@ pub struct SegmentRegister {
 impl SegmentRegister {
     pub fn new(seg: SegReg) -> SegmentRegister {
         SegmentRegister {
-            selector: if seg == SegReg::CS {
-                0xf000
-            } else {
-                0
-            },
-            base: if seg == SegReg::CS {
-                0xff0000
-            } else {
-                0
-            },
+            selector: if seg == SegReg::CS { 0xf000 } else { 0 },
+            base: if seg == SegReg::CS { 0xff0000 } else { 0 },
             limit: 0xffff,
             rights: 0x93,
             valid: true,
@@ -93,7 +85,7 @@ impl SegmentRegister {
 #[derive(Clone, Copy, Debug)]
 pub struct GDTRIDTR {
     pub base: u32, //Actually only 24 bits
-    pub limit: u16,    
+    pub limit: u16,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -118,10 +110,12 @@ impl Registers {
         Registers {
             ip: 0xfff0,
             gprs: [0; 8],
-            seg_regs: [SegmentRegister::new(SegReg::ES),
-            SegmentRegister::new(SegReg::CS),
-            SegmentRegister::new(SegReg::SS),
-            SegmentRegister::new(SegReg::DS)],
+            seg_regs: [
+                SegmentRegister::new(SegReg::ES),
+                SegmentRegister::new(SegReg::CS),
+                SegmentRegister::new(SegReg::SS),
+                SegmentRegister::new(SegReg::DS),
+            ],
             flags: Flags::empty(),
             msw: 0xfff0,
         }
