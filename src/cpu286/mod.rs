@@ -262,11 +262,10 @@ impl Cpu286 {
                 println!("jmp near");
                 let offset = self.mem_read_word(
                     ctx,
-                    self.regs.readseg16(SegReg::CS).base +
-                    self.regs.ip.wrapping_add(1) as u32,
+                    self.regs.readseg16(SegReg::CS).base + self.regs.ip.wrapping_add(1) as u32,
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(offset);
-            },
+            }
             0xea => {
                 println!("jmp far");
                 let offset = self.mem_read_word(

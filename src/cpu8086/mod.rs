@@ -287,7 +287,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(offset);
-            },
+            }
             0xea => {
                 println!("jmp far");
                 let offset = self.mem_read_word(
