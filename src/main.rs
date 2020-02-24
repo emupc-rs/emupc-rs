@@ -11,7 +11,7 @@ pub mod hardware;
 #[allow(dead_code)]
 
 fn main() {
-    let mut machine = IbmPcAtMachine::new();
+    let mut machine = IbmPc5150Machine::new();
 
     //machine.cpu.tick(&mut machine.hardware);
     loop {

@@ -20,6 +20,12 @@ bitflags!(
     }
 );
 
+impl Default for Flags {
+    fn default() -> Flags {
+        Flags::DEFAULT
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum Reg8 {
     AL,
