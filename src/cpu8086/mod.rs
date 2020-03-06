@@ -1,4 +1,4 @@
-use crate::cpu8086::registers::*;
+use registers::*;
 
 pub mod registers;
 
