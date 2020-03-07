@@ -1,5 +1,4 @@
 use bitflags::bitflags;
-use std::fmt;
 #[allow(dead_code)]
 
 bitflags!(
@@ -36,6 +35,22 @@ pub enum Reg8 {
     BH,
 }
 
+impl Reg8 {
+    pub fn from_num(num: u8) -> Option<Reg8> {
+        match num & 7 {
+            0 => Some(Reg8::AL),
+            1 => Some(Reg8::CL),
+            2 => Some(Reg8::DL),
+            3 => Some(Reg8::BL),
+            4 => Some(Reg8::AH),
+            5 => Some(Reg8::CH),
+            6 => Some(Reg8::DH),
+            7 => Some(Reg8::BH),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum Reg16 {
     AX,
@@ -47,6 +62,12 @@ pub enum Reg16 {
     SI,
     DI,
     FLAGS,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum RegisterType {
+    Bits8,
+    Bits16,
 }
 
 #[derive(Clone, Copy, Debug)]

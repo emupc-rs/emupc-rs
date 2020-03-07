@@ -1,7 +1,5 @@
 extern crate bitflags;
 
-use crate::cpu286::*;
-use crate::cpu8086::*;
 use crate::hardware::*;
 
 pub mod cpu286;

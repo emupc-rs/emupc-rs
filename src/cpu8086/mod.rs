@@ -1,6 +1,8 @@
 use registers::*;
+use operand::*;
 
 pub mod registers;
+pub mod operand;
 
 pub trait Cpu8086Context {
     fn mem_read_byte(&mut self, addr: u32) -> u8;
@@ -47,10 +49,12 @@ impl Cpu8086 {
     pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
-            "Opcode {:#02x} CS {:#04x} IP {:#04x}",
+            "Opcode {:#02x} CS {:#04x} IP {:#04x}\nGPRs {:x?} FLAGS {:#04x}",
             self.opcode,
             self.regs.readseg16(SegReg::CS),
-            self.regs.ip
+            self.regs.ip,
+            self.regs.gprs,
+            self.regs.flags.bits()
         );
         match self.opcode {
             0x70 => {
@@ -195,8 +199,8 @@ impl Cpu8086 {
                 println!("lahf");
                 self.regs.write8(
                     Reg8::AH,
-                    ((self.regs.flags.bits() & 0xd5) | (0xf002 as u16)) as u8,
-                ); //Flags::DEFAULT
+                    (self.regs.flags.bits() & 0xd5) as u8,
+                );
                 self.regs.ip = self.regs.ip.wrapping_add(1);
             }
             0xb0 => {
@@ -279,6 +283,63 @@ impl Cpu8086 {
                 self.regs.write8(Reg8::BH, imm_value);
                 self.regs.ip = self.regs.ip.wrapping_add(2);
             }
+            0xd0 => {
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Opcode doesn't support memory operands!"),
+                }
+                let group_op = (modrm & 0x38) >> 3;
+                match group_op {
+                    5 => {
+                        println!("shr reg, 1");
+                        if let Operand::Register(opcode_reg) = opcode_params.rm {
+                            let mut reg : u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                            self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
+                            self.regs.flags.set(Flags::OVERFLOW, (reg & 0x80) == 0x80);
+                            reg = reg.wrapping_shr(1);
+                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                        }
+                    }
+                    _ => panic!("Unimplemented group opcode!"),
+                }
+            },
+            0xd2 => {
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Opcode doesn't support memory operands!"),
+                }
+                let group_op = (modrm & 0x38) >> 3;
+                match group_op {
+                    5 => {
+                        println!("shr reg, cl");
+                        let mut count = self.regs.read8(Reg8::CL);
+                        if let Operand::Register(opcode_reg) = opcode_params.rm {
+                            let mut reg : u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                            while count != 0 {
+                                reg = reg.wrapping_shr(1);
+                                count = count.wrapping_sub(1);
+                                self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
+                            }
+                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                        }
+                    }
+                    _ => panic!("Unimplemented group opcode!"),
+                }
+            },
             0xe9 => {
                 println!("jmp near");
                 let offset = self.mem_read_word(

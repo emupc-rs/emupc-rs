@@ -1,5 +1,4 @@
 use bitflags::bitflags;
-use std::fmt;
 #[allow(dead_code)]
 
 bitflags!(
@@ -224,7 +223,7 @@ impl Registers {
         if (self.msw & 1) != 0 {
             panic!("Protected mode not implemented yet!");
         } else {
-            let mut segment = 1;
+            let segment;
             match seg_reg {
                 ES => segment = 0,
                 CS => segment = 1,
