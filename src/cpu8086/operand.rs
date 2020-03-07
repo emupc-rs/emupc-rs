@@ -1,5 +1,5 @@
-use crate::cpu8086::Cpu8086;
 use crate::cpu8086::registers::*;
+use crate::cpu8086::Cpu8086;
 
 #[derive(PartialEq, Debug)]
 pub enum AddrType {
@@ -51,24 +51,25 @@ impl Cpu8086 {
         };
         base + offset
     }
-    pub fn get_operand_seg(&self, addr_type: AddrType, disp_type: Option<DisplacementType>,
-        seg_override: Option<SegReg>) -> u16 {
+    pub fn get_operand_seg(
+        &self,
+        addr_type: AddrType,
+        disp_type: Option<DisplacementType>,
+        seg_override: Option<SegReg>,
+    ) -> u16 {
         match seg_override {
             Some(segment) => self.regs.readseg16(segment),
-            None => {
-                match addr_type {
-                    AddrType::BpSi => self.regs.readseg16(SegReg::SS),
-                    AddrType::BpDi => self.regs.readseg16(SegReg::SS),
-                    AddrType::Bp => {
-                        if disp_type == Some(DisplacementType::Word) {
-                            self.regs.readseg16(SegReg::SS)
-                        }
-                        else {
-                            self.regs.readseg16(SegReg::DS)
-                        }
-                    },
-                    _ => self.regs.readseg16(SegReg::DS)
+            None => match addr_type {
+                AddrType::BpSi => self.regs.readseg16(SegReg::SS),
+                AddrType::BpDi => self.regs.readseg16(SegReg::SS),
+                AddrType::Bp => {
+                    if disp_type == Some(DisplacementType::Word) {
+                        self.regs.readseg16(SegReg::SS)
+                    } else {
+                        self.regs.readseg16(SegReg::DS)
+                    }
                 }
+                _ => self.regs.readseg16(SegReg::DS),
             },
         }
     }
@@ -80,13 +81,13 @@ impl Cpu8086 {
 
         match mode {
             3 => {
-                let operand_reg  = Operand::Register(reg);
+                let operand_reg = Operand::Register(reg);
                 let operand_rm = Operand::Register(reg);
                 OpcodeParams {
                     reg: operand_reg,
                     rm: operand_rm,
                 }
-            },
+            }
             _ => panic!("Unimplemented ModR/M mode!"),
         }
     }
