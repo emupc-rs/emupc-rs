@@ -250,6 +250,12 @@ impl Cpu8086 {
                     }
                 }
             }
+            0x26 => {
+                println!("es:");
+                self.seg_override = Some(SegReg::ES);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.tick(ctx);
+            }
             0x2a => {
                 println!("sub reg8, rm8");
                 let modrm = self.mem_read_byte(
@@ -312,6 +318,12 @@ impl Cpu8086 {
                     }
                 }
             }
+            0x2e => {
+                println!("cs:");
+                self.seg_override = Some(SegReg::CS);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.tick(ctx);
+            }
             0x32 => {
                 println!("xor reg8, rm8");
                 let modrm = self.mem_read_byte(
@@ -367,6 +379,18 @@ impl Cpu8086 {
                             .write16(Reg16::from_num(opcode_reg).unwrap(), result);
                     }
                 }
+            }
+            0x36 => {
+                println!("ss:");
+                self.seg_override = Some(SegReg::SS);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.tick(ctx);
+            }
+            0x3e => {
+                println!("ds:");
+                self.seg_override = Some(SegReg::DS);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.tick(ctx);
             }
             0x70 => {
                 println!("jo");
