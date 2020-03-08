@@ -51,11 +51,7 @@ impl Cpu8086 {
         };
         base + offset
     }
-    pub fn get_operand_seg(
-        &self,
-        addr_type: AddrType,
-        disp_type: Option<DisplacementType>,
-    ) -> u16 {
+    pub fn get_operand_seg(&self, addr_type: AddrType, disp_type: Option<DisplacementType>) -> u16 {
         match self.seg_override {
             Some(segment) => self.regs.readseg16(segment),
             None => match addr_type {
