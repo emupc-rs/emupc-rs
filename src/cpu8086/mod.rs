@@ -392,6 +392,198 @@ impl Cpu8086 {
                 self.regs.ip = self.regs.ip.wrapping_add(1);
                 self.tick(ctx);
             }
+            0x40 => {
+                println!("inc ax");
+                let reg: u16 = self.regs.read16(Reg16::AX);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::AX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x41 => {
+                println!("inc cx");
+                let reg: u16 = self.regs.read16(Reg16::CX);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::CX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x42 => {
+                println!("inc dx");
+                let reg: u16 = self.regs.read16(Reg16::DX);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::DX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x43 => {
+                println!("inc bx");
+                let reg: u16 = self.regs.read16(Reg16::BX);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::BX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x44 => {
+                println!("inc sp");
+                let reg: u16 = self.regs.read16(Reg16::SP);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::SP, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x45 => {
+                println!("inc bp");
+                let reg: u16 = self.regs.read16(Reg16::BP);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::BP, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x46 => {
+                println!("inc si");
+                let reg: u16 = self.regs.read16(Reg16::SI);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::SI, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x47 => {
+                println!("inc di");
+                let reg: u16 = self.regs.read16(Reg16::DI);
+                let result = reg.wrapping_add(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::DI, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x48 => {
+                println!("dec ax");
+                let reg: u16 = self.regs.read16(Reg16::AX);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::AX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x49 => {
+                println!("dec cx");
+                let reg: u16 = self.regs.read16(Reg16::CX);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::CX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x4a => {
+                println!("dec dx");
+                let reg: u16 = self.regs.read16(Reg16::DX);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::DX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x4b => {
+                println!("dec bx");
+                let reg: u16 = self.regs.read16(Reg16::BX);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::BX, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x4c => {
+                println!("dec sp");
+                let reg: u16 = self.regs.read16(Reg16::SP);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::SP, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x4d => {
+                println!("dec bp");
+                let reg: u16 = self.regs.read16(Reg16::BP);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::BP, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x4e => {
+                println!("dec si");
+                let reg: u16 = self.regs.read16(Reg16::SI);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::SI, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x4f => {
+                println!("dec di");
+                let reg: u16 = self.regs.read16(Reg16::DI);
+                let result = reg.wrapping_sub(1);
+                self.regs.flags.set(Flags::ZERO, result == 0);
+                self.regs.flags.set(Flags::SIGN, (result & 0x8000) == 0x8000);
+                self.set_parity_flag(result);
+                self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000);
+                self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
+                self.regs.write16(Reg16::DI, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
             0x70 => {
                 println!("jo");
                 let offset: i16 = self.mem_read_byte(
@@ -1003,7 +1195,7 @@ impl Cpu8086 {
                             self.regs.flags.set(Flags::ZERO, result == 0);
                             self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
                             self.set_parity_flag(result as u16);
-                            self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x80) == 0x80);
+                            self.regs.flags.set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x80)== 0x80);
                             self.regs.flags.set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
                             self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), result);
                         }
