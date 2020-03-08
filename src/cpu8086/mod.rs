@@ -46,6 +46,15 @@ impl Cpu8086 {
         u16::from_le_bytes([lo, hi])
     }
 
+    pub fn set_parity_flag(&mut self, mut data: u16) {
+        let mut parity = 0;
+        while data != 0 {
+            parity ^= data & 1;
+            data = data >> 1;
+        }
+        self.regs.flags.set(Flags::PARITY, parity != 0);
+    }
+
     pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
@@ -57,134 +66,196 @@ impl Cpu8086 {
             self.regs.flags.bits()
         );
         match self.opcode {
+            0x32 => {
+                println!("xor reg, rm");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Memory operands not supported yet!"),
+                }
+                self.regs.flags.set(Flags::OVERFLOW, false);
+                self.regs.flags.set(Flags::CARRY, false);
+                //A bit ugly, but I can't figure out any other way to do this
+                if let Operand::Register(opcode_reg) = opcode_params.reg {
+                    if let Operand::Register(opcode_rm) = opcode_params.rm {
+                        let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
+                            ^ self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                        self.regs.flags.set(Flags::ZERO, result == 0);
+                        self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
+                        self.set_parity_flag(result as u16);
+                        self.regs
+                            .write8(Reg8::from_num(opcode_reg).unwrap(), result);
+                    }
+                }
+            }
             0x70 => {
                 println!("jo");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if self.regs.flags.contains(Flags::OVERFLOW) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x71 => {
                 println!("jno");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if !self.regs.flags.contains(Flags::OVERFLOW) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x72 => {
                 println!("jc");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if self.regs.flags.contains(Flags::CARRY) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x73 => {
                 println!("jnc");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if !self.regs.flags.contains(Flags::CARRY) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x74 => {
                 println!("jz");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if self.regs.flags.contains(Flags::ZERO) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x75 => {
                 println!("jnz");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if !self.regs.flags.contains(Flags::ZERO) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x78 => {
                 println!("js");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if self.regs.flags.contains(Flags::SIGN) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x79 => {
                 println!("jns");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if !self.regs.flags.contains(Flags::SIGN) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x7a => {
                 println!("jp");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if self.regs.flags.contains(Flags::PARITY) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0x7b => {
                 println!("jnp");
-                self.regs.ip = self.regs.ip.wrapping_add(1);
                 let offset: i16 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
                 if !self.regs.flags.contains(Flags::PARITY) {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
+                }
+            }
+            0x8c => {
+                println!("mov rm, seg");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Memory operands not supported yet!"),
+                }
+                if let Operand::Register(opcode_reg) = opcode_params.reg {
+                    if let Operand::Register(opcode_rm) = opcode_params.rm {
+                        self.regs.write16(
+                            Reg16::from_num(opcode_rm).unwrap(),
+                            self.regs.readseg16(SegReg::from_num(opcode_reg).unwrap()),
+                        );
+                    }
+                }
+            }
+            0x8e => {
+                println!("mov seg, rm");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Memory operands not supported yet!"),
+                }
+                if let Operand::Register(opcode_reg) = opcode_params.reg {
+                    if let Operand::Register(opcode_rm) = opcode_params.rm {
+                        self.regs.writeseg16(
+                            SegReg::from_num(opcode_reg).unwrap(),
+                            self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
+                        );
+                    }
                 }
             }
             0x9e => {
@@ -281,6 +352,46 @@ impl Cpu8086 {
                 self.regs.write8(Reg8::BH, imm_value);
                 self.regs.ip = self.regs.ip.wrapping_add(2);
             }
+            0xb8 => {
+                println!("mov ax, imm");
+                let imm_value = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.write16(Reg16::AX, imm_value);
+                self.regs.ip = self.regs.ip.wrapping_add(3);
+            }
+            0xb9 => {
+                println!("mov cx, imm");
+                let imm_value = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.write16(Reg16::CX, imm_value);
+                self.regs.ip = self.regs.ip.wrapping_add(3);
+            }
+            0xba => {
+                println!("mov dx, imm");
+                let imm_value = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.write16(Reg16::DX, imm_value);
+                self.regs.ip = self.regs.ip.wrapping_add(3);
+            }
+            0xbb => {
+                println!("mov bx, imm");
+                let imm_value = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.write16(Reg16::BX, imm_value);
+                self.regs.ip = self.regs.ip.wrapping_add(3);
+            }
             0xd0 => {
                 let modrm = self.mem_read_byte(
                     ctx,
@@ -295,6 +406,17 @@ impl Cpu8086 {
                 }
                 let group_op = (modrm & 0x38) >> 3;
                 match group_op {
+                    4 => {
+                        println!("shl reg, 1");
+                        if let Operand::Register(opcode_reg) = opcode_params.rm {
+                            let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                            self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
+                            let overflow_calc = ((reg >> 7) & 1) ^ ((reg >> 6) & 1);
+                            self.regs.flags.set(Flags::OVERFLOW, overflow_calc == 1);
+                            reg = reg.wrapping_shl(1);
+                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                        }
+                    }
                     5 => {
                         println!("shr reg, 1");
                         if let Operand::Register(opcode_reg) = opcode_params.rm {
@@ -322,15 +444,28 @@ impl Cpu8086 {
                 }
                 let group_op = (modrm & 0x38) >> 3;
                 match group_op {
+                    4 => {
+                        println!("shl reg, cl");
+                        let mut count = self.regs.read8(Reg8::CL);
+                        if let Operand::Register(opcode_reg) = opcode_params.rm {
+                            let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                            while count != 0 {
+                                self.regs.flags.set(Flags::CARRY, (reg & 0x80) == 0x80);
+                                reg = reg.wrapping_shl(1);
+                                count = count.wrapping_sub(1);
+                            }
+                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                        }
+                    }
                     5 => {
                         println!("shr reg, cl");
                         let mut count = self.regs.read8(Reg8::CL);
                         if let Operand::Register(opcode_reg) = opcode_params.rm {
                             let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
                             while count != 0 {
+                                self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
                                 reg = reg.wrapping_shr(1);
                                 count = count.wrapping_sub(1);
-                                self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
                             }
                             self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
                         }
@@ -362,6 +497,16 @@ impl Cpu8086 {
                 self.regs.writeseg16(SegReg::CS, segment);
                 self.regs.ip = offset;
             }
+            0xf8 => {
+                println!("clc");
+                self.regs.flags.set(Flags::CARRY, false);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0xf9 => {
+                println!("stc");
+                self.regs.flags.set(Flags::CARRY, true);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
             0xfa => {
                 println!("cli");
                 self.regs.flags.set(Flags::INTERRUPT, false);
@@ -370,6 +515,16 @@ impl Cpu8086 {
             0xfb => {
                 println!("sti");
                 self.regs.flags.set(Flags::INTERRUPT, true);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0xfc => {
+                println!("cld");
+                self.regs.flags.set(Flags::DIRECTION, false);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0xfd => {
+                println!("std");
+                self.regs.flags.set(Flags::DIRECTION, true);
                 self.regs.ip = self.regs.ip.wrapping_add(1);
             }
             _ => panic!("Unhandled opcode!"),

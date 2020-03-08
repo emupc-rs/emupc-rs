@@ -64,6 +64,22 @@ pub enum Reg16 {
     FLAGS,
 }
 
+impl Reg16 {
+    pub fn from_num(num: u8) -> Option<Reg16> {
+        match num & 7 {
+            0 => Some(Reg16::AX),
+            1 => Some(Reg16::CX),
+            2 => Some(Reg16::DX),
+            3 => Some(Reg16::BX),
+            4 => Some(Reg16::SP),
+            5 => Some(Reg16::BP),
+            6 => Some(Reg16::SI),
+            7 => Some(Reg16::DI),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum RegisterType {
     Bits8,
@@ -76,6 +92,18 @@ pub enum SegReg {
     CS,
     SS,
     DS,
+}
+
+impl SegReg {
+    pub fn from_num(num: u8) -> Option<SegReg> {
+        match num & 3 {
+            0 => Some(SegReg::ES),
+            1 => Some(SegReg::CS),
+            2 => Some(SegReg::SS),
+            3 => Some(SegReg::DS),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -92,7 +120,7 @@ impl Registers {
             ip: 0,
             gprs: [0; 8],
             seg_regs: [0, 0xffff, 0, 0],
-            flags: Flags::empty(),
+            flags: Flags::default(),
         }
     }
 

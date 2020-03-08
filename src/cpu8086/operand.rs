@@ -82,7 +82,7 @@ impl Cpu8086 {
         match mode {
             3 => {
                 let operand_reg = Operand::Register(reg);
-                let operand_rm = Operand::Register(reg);
+                let operand_rm = Operand::Register(rm);
                 OpcodeParams {
                     reg: operand_reg,
                     rm: operand_rm,
