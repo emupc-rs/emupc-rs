@@ -15,6 +15,7 @@ pub trait Cpu8086Context {
 pub struct Cpu8086 {
     pub regs: Registers,
     pub opcode: u8,
+    pub seg_override: Option<SegReg>,
 }
 
 impl Cpu8086 {
@@ -22,6 +23,7 @@ impl Cpu8086 {
         Cpu8086 {
             regs: Registers::new(),
             opcode: 0,
+            seg_override: None,
         }
     }
     pub fn mem_read_byte<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
@@ -987,5 +989,6 @@ impl Cpu8086 {
             }
             _ => panic!("Unhandled opcode!"),
         }
+        self.seg_override = None;
     }
 }

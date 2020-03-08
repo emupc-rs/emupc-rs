@@ -55,9 +55,8 @@ impl Cpu8086 {
         &self,
         addr_type: AddrType,
         disp_type: Option<DisplacementType>,
-        seg_override: Option<SegReg>,
     ) -> u16 {
-        match seg_override {
+        match self.seg_override {
             Some(segment) => self.regs.readseg16(segment),
             None => match addr_type {
                 AddrType::BpSi => self.regs.readseg16(SegReg::SS),
