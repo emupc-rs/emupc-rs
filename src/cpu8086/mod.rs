@@ -187,10 +187,10 @@ impl Cpu8086 {
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
                 let mut rm: u16 = 0;
-                if let Operand::Register(opcode_rm) = opcode_params.rm {
-                    rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
-                    rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
+                if let Operand::Register(opcode_rm_reg) = opcode_params.rm {
+                    rm = self.regs.read16(Reg16::from_num(opcode_rm_reg).unwrap());
+                } else if let Operand::Address(segment, opcode_rm_addr) = opcode_params.rm {
+                    rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm_addr);
                 }
                 let result = reg | rm;
                 self.set_pzs16(result);
@@ -349,16 +349,16 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
-                let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
-                let mut rm: u8 = 0;
+                let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
+                let mut rm: u16 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
-                    rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
-                    rm = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
+                    rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
                 }
                 let result = reg ^ rm;
-                self.set_pzs8(result);
-                self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
+                self.set_pzs16(result);
+                self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
             }
             0x36 => {
                 println!("ss:");
@@ -844,10 +844,6 @@ impl Cpu8086 {
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
                 let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
-                match opcode_params.rm {
-                    Operand::Register(_) => (),
-                    _ => panic!("Memory operands not supported yet!"),
-                }
                 let reg_num = (modrm & 0x38) >> 3;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     self.regs.writeseg16(
@@ -855,10 +851,9 @@ impl Cpu8086 {
                         self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
                     );
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    let rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
                     self.regs.writeseg16(
-                        SegReg::from_num(reg_num).unwrap(),
-                        self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm),
-                    );
+                        SegReg::from_num(reg_num).unwrap(), rm);
                 }
             }
             0x9e => {
