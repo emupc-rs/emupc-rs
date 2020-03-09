@@ -66,7 +66,7 @@ pub enum TableReg {
     TR,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct SegmentRegister {
     pub selector: u16,
     pub base: u32, //Actually only 24 bits
@@ -87,13 +87,13 @@ impl SegmentRegister {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct GDTRIDTR {
     pub base: u32, //Actually only 24 bits
     pub limit: u16,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct LDTRTR {
     pub selector: u16,
     pub base: u32, //Actually only 24 bits
@@ -101,7 +101,7 @@ pub struct LDTRTR {
     pub rights: u8,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Registers {
     pub ip: u16,
     pub gprs: [u16; 8],

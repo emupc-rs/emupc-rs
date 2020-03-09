@@ -106,7 +106,7 @@ impl SegReg {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Registers {
     pub ip: u16,
     pub gprs: [u16; 8],

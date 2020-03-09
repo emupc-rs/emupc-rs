@@ -7,7 +7,7 @@ use crate::ibmpcatmachine::*;
 pub mod ibmpc5150machine;
 pub mod ibmpcatmachine;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct IbmPc5150Machine {
     pub cpu: Cpu8086,
     pub hardware: IbmPc5150Hardware,
@@ -22,7 +22,7 @@ impl IbmPc5150Machine {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct IbmPcAtMachine {
     pub cpu: Cpu286,
     pub hardware: IbmPcAtHardware,

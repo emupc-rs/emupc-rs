@@ -9,7 +9,7 @@ pub trait Cpu286Context {
     fn io_write_byte(&mut self, addr: u16, value: u8);
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Cpu286 {
     pub regs: Registers,
     pub opcode: u8,

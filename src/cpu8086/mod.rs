@@ -11,7 +11,7 @@ pub trait Cpu8086Context {
     fn io_write_byte(&mut self, addr: u16, value: u8);
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Cpu8086 {
     pub regs: Registers,
     pub opcode: u8,
@@ -60,7 +60,7 @@ impl Cpu8086 {
         let mut parity = 0;
         while data != 0 {
             parity ^= data & 1;
-            data = data >> 1;
+            data >>= 1;
         }
         self.regs.flags.set(Flags::PARITY, parity != 0);
     }
