@@ -77,6 +77,12 @@ impl Cpu8086 {
         self.regs.flags.set(Flags::SIGN, (data & 0x8000) == 0x8000);
     }
 
+    pub fn pop16<T: Cpu8086Context>(&mut self, ctx: &mut T) -> u16 {
+        let stack_pointer = self.regs.read16(Reg16::SP);
+        self.regs.write16(Reg16::SP, stack_pointer.wrapping_add(2));
+        self.mem_read_word(ctx, self.regs.readseg16(SegReg::SS), stack_pointer)
+    }
+
     pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
@@ -96,16 +102,27 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
-                match opcode_params.rm {
-                    Operand::Register(_) => (),
-                    _ => panic!("Memory operands not supported yet!"),
-                }
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 let reg_num = (modrm & 0x38) >> 3;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                     let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                     let result = reg - rm;
+                    self.set_pzs8(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .write8(Reg8::from_num(reg_num).unwrap(), result);
+                }
+                else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                    let rm = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
+                    let result = reg.wrapping_add(rm);
                     self.set_pzs8(result);
                     self.regs.flags.set(
                         Flags::OVERFLOW,
@@ -126,7 +143,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -135,7 +152,7 @@ impl Cpu8086 {
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
                     let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                    let result = reg - rm;
+                    let result = reg.wrapping_add(rm);
                     self.set_pzs16(result);
                     self.regs.flags.set(
                         Flags::OVERFLOW,
@@ -156,7 +173,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -180,7 +197,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -204,7 +221,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -228,7 +245,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -258,7 +275,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -267,7 +284,7 @@ impl Cpu8086 {
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                     let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                    let result = reg - rm;
+                    let result = reg.wrapping_sub(rm);
                     self.set_pzs8(result);
                     self.regs.flags.set(
                         Flags::OVERFLOW,
@@ -288,7 +305,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -299,7 +316,7 @@ impl Cpu8086 {
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
                     let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                    let result = reg - rm;
+                    let result = reg.wrapping_sub(rm);
                     self.set_pzs16(result);
                     self.regs.flags.set(
                         Flags::OVERFLOW,
@@ -326,7 +343,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -350,7 +367,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -746,7 +763,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -767,7 +784,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -788,7 +805,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -809,7 +826,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -830,7 +847,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -851,7 +868,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
@@ -1038,6 +1055,11 @@ impl Cpu8086 {
                 self.regs.write16(Reg16::SI, imm_value);
                 self.regs.ip = self.regs.ip.wrapping_add(3);
             }
+            0xc3 => {
+                println!("ret");
+                self.regs.ip = self.pop16(ctx);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+            }
             0xd0 => {
                 let modrm = self.mem_read_byte(
                     ctx,
@@ -1045,7 +1067,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Opcode doesn't support memory operands!"),
@@ -1085,7 +1107,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Opcode doesn't support memory operands!"),
@@ -1121,6 +1143,19 @@ impl Cpu8086 {
                         }
                     }
                     _ => panic!("Unimplemented group opcode!"),
+                }
+            }
+            0xe2 => {
+                println!("loop");
+                let offset: i16 = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                ) as i8 as i16;
+                self.regs.write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                if self.regs.read16(Reg16::CX) != 0 {
+                    self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
             0xe6 => {
@@ -1199,7 +1234,7 @@ impl Cpu8086 {
                     self.regs.ip.wrapping_add(1),
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
-                let opcode_params = self.get_opcode_params_from_modrm(modrm);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 match opcode_params.rm {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
