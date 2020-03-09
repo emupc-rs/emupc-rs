@@ -27,7 +27,7 @@ impl Cpu8086 {
         }
     }
     pub fn mem_read_byte<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
-        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xf_ffff;
         ctx.mem_read_byte(masked_addr)
     }
     pub fn mem_write_byte<T: Cpu8086Context>(
@@ -37,7 +37,7 @@ impl Cpu8086 {
         addr: u16,
         value: u8,
     ) {
-        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xf_ffff;
         ctx.mem_write_byte(masked_addr, value)
     }
 
@@ -50,9 +50,9 @@ impl Cpu8086 {
     }
 
     pub fn mem_read_word<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u16 {
-        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xfffff;
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xf_ffff;
         let lo = ctx.mem_read_byte(masked_addr);
-        let hi = ctx.mem_read_byte(masked_addr.wrapping_add(1) & 0xfffff);
+        let hi = ctx.mem_read_byte(masked_addr.wrapping_add(1) & 0xf_ffff);
         u16::from_le_bytes([lo, hi])
     }
 

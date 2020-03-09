@@ -23,18 +23,18 @@ impl Cpu286 {
         }
     }
     pub fn mem_read_byte<T: Cpu286Context>(&mut self, ctx: &mut T, addr: u32) -> u8 {
-        let masked_addr = addr & 0xffffff;
+        let masked_addr = addr & 0xff_ffff;
         ctx.mem_read_byte(masked_addr)
     }
     pub fn mem_write_byte<T: Cpu286Context>(&mut self, ctx: &mut T, addr: u32, value: u8) {
-        let masked_addr = addr & 0xffffff;
+        let masked_addr = addr & 0xff_ffff;
         ctx.mem_write_byte(masked_addr, value)
     }
 
     pub fn mem_read_word<T: Cpu286Context>(&mut self, ctx: &mut T, addr: u32) -> u16 {
-        let masked_addr = addr & 0xffffff;
+        let masked_addr = addr & 0xff_ffff;
         let lo = ctx.mem_read_byte(masked_addr);
-        let hi = ctx.mem_read_byte(masked_addr.wrapping_add(1) & 0xffffff);
+        let hi = ctx.mem_read_byte(masked_addr.wrapping_add(1) & 0xff_ffff);
         u16::from_le_bytes([lo, hi])
     }
 

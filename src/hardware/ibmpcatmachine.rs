@@ -31,20 +31,17 @@ impl IbmPcAtHardware {
 
 impl<'a> Cpu286Context for IbmPcAtHardware {
     fn mem_read_byte(&mut self, addr: u32) -> u8 {
-        let actual_addr = addr & 0xfffff;
+        let actual_addr = addr & 0xff_ffff;
         match actual_addr {
-            0..=0x0a_0000 => self.ram[(addr & 0xffff) as usize],
-            0x0f_0000..=0x0f_ffff => self.bios_rom[(addr & 0xffff) as usize],
-            0xff_0000..=0xff_ffff => self.bios_rom[(addr & 0xffff) as usize],
+            0..=0x0a_0000 => self.ram[(actual_addr & 0xffff) as usize],
+            0x0f_0000..=0x0f_ffff => self.bios_rom[(actual_addr & 0xffff) as usize],
+            0xff_0000..=0xff_ffff => self.bios_rom[(actual_addr & 0xffff) as usize],
             _ => 0xff,
         }
     }
     fn mem_write_byte(&mut self, addr: u32, value: u8) {
-        let actual_addr = addr & 0xfffff;
-        match actual_addr {
-            0..=0x0a_0000 => self.ram[(addr & 0xffff) as usize] = value,
-            _ => {},
-        };
+        let actual_addr = addr & 0xff_ffff;
+        if let 0..=0x0a_0000 = actual_addr { self.ram[(actual_addr & 0xffff) as usize] = value }
     }
 
     fn io_read_byte(&mut self, _addr: u16) -> u8 {

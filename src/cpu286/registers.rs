@@ -79,7 +79,7 @@ impl SegmentRegister {
     pub fn new(seg: SegReg) -> SegmentRegister {
         SegmentRegister {
             selector: if seg == SegReg::CS { 0xf000 } else { 0 },
-            base: if seg == SegReg::CS { 0xff0000 } else { 0 },
+            base: if seg == SegReg::CS { 0xff_0000 } else { 0 },
             limit: 0xffff,
             rights: 0x93,
             valid: true,
