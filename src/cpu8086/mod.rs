@@ -101,25 +101,21 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                self.regs.flags.set(Flags::OVERFLOW, false);
-                self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let reg = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
-                        let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        let result = reg - rm;
-                        self.set_pzs8(result);
-                        self.regs.flags.set(
-                            Flags::OVERFLOW,
-                            ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
-                        );
-                        self.regs
-                            .flags
-                            .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                        self.regs
-                            .write8(Reg8::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                    let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    let result = reg - rm;
+                    self.set_pzs8(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x03 => {
@@ -135,25 +131,21 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                self.regs.flags.set(Flags::OVERFLOW, false);
-                self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let reg = self.regs.read16(Reg16::from_num(opcode_reg).unwrap());
-                        let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        let result = reg - rm;
-                        self.set_pzs16(result);
-                        self.regs.flags.set(
-                            Flags::OVERFLOW,
-                            ((result ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
-                        );
-                        self.regs
-                            .flags
-                            .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                        self.regs
-                            .write16(Reg16::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
+                    let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                    let result = reg - rm;
+                    self.set_pzs16(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((result ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x0a => {
@@ -171,15 +163,13 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
-                            | self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        self.set_pzs8(result);
-                        self.regs
-                            .write8(Reg8::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let result = self.regs.read8(Reg8::from_num(reg_num).unwrap())
+                        | self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    self.set_pzs8(result);
+                    self.regs
+                        .write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x0b => {
@@ -197,15 +187,13 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let result = self.regs.read16(Reg16::from_num(opcode_reg).unwrap())
-                            | self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        self.set_pzs16(result);
-                        self.regs
-                            .write16(Reg16::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let result = self.regs.read16(Reg16::from_num(reg_num).unwrap())
+                        | self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                    self.set_pzs16(result);
+                    self.regs
+                        .write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x22 => {
@@ -223,15 +211,13 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
-                            & self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        self.set_pzs8(result);
-                        self.regs
-                            .write8(Reg8::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let result = self.regs.read8(Reg8::from_num(reg_num).unwrap())
+                        & self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    self.set_pzs8(result);
+                    self.regs
+                        .write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x23 => {
@@ -249,15 +235,13 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let result = self.regs.read16(Reg16::from_num(opcode_reg).unwrap())
-                            & self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        self.set_pzs16(result);
-                        self.regs
-                            .write16(Reg16::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let result = self.regs.read16(Reg16::from_num(reg_num).unwrap())
+                        & self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                    self.set_pzs16(result);
+                    self.regs
+                        .write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x26 => {
@@ -279,25 +263,21 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                self.regs.flags.set(Flags::OVERFLOW, false);
-                self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let reg = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
-                        let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        let result = reg - rm;
-                        self.set_pzs8(result);
-                        self.regs.flags.set(
-                            Flags::OVERFLOW,
-                            ((reg ^ rm) & (result ^ reg) & 0x80) == 0x80,
-                        );
-                        self.regs
-                            .flags
-                            .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                        self.regs
-                            .write8(Reg8::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                    let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    let result = reg - rm;
+                    self.set_pzs8(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((reg ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x2b => {
@@ -315,23 +295,21 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let reg = self.regs.read16(Reg16::from_num(opcode_reg).unwrap());
-                        let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        let result = reg - rm;
-                        self.set_pzs16(result);
-                        self.regs.flags.set(
-                            Flags::OVERFLOW,
-                            ((reg ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
-                        );
-                        self.regs
-                            .flags
-                            .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                        self.regs
-                            .write16(Reg16::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
+                    let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                    let result = reg - rm;
+                    self.set_pzs16(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((reg ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x2e => {
@@ -355,15 +333,13 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
-                            ^ self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        self.set_pzs8(result);
-                        self.regs
-                            .write8(Reg8::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let result = self.regs.read8(Reg8::from_num(reg_num).unwrap())
+                        ^ self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    self.set_pzs8(result);
+                    self.regs
+                        .write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x33 => {
@@ -381,15 +357,13 @@ impl Cpu8086 {
                 }
                 self.regs.flags.set(Flags::OVERFLOW, false);
                 self.regs.flags.set(Flags::CARRY, false);
-                //A bit ugly, but I can't figure out any other way to do this
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        let result = self.regs.read16(Reg16::from_num(opcode_reg).unwrap())
-                            ^ self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        self.set_pzs16(result);
-                        self.regs
-                            .write16(Reg16::from_num(opcode_reg).unwrap(), result);
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let result = self.regs.read16(Reg16::from_num(reg_num).unwrap())
+                        ^ self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                    self.set_pzs16(result);
+                    self.regs
+                        .write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x36 => {
@@ -777,13 +751,12 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        self.regs.write8(
-                            Reg8::from_num(opcode_rm).unwrap(),
-                            self.regs.read8(Reg8::from_num(opcode_reg).unwrap()),
-                        );
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    self.regs.write8(
+                        Reg8::from_num(opcode_rm).unwrap(),
+                        self.regs.read8(Reg8::from_num(reg_num).unwrap()),
+                    );
                 }
             }
             0x89 => {
@@ -799,13 +772,12 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        self.regs.write16(
-                            Reg16::from_num(opcode_rm).unwrap(),
-                            self.regs.read16(Reg16::from_num(opcode_reg).unwrap()),
-                        );
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    self.regs.write16(
+                        Reg16::from_num(opcode_rm).unwrap(),
+                        self.regs.read16(Reg16::from_num(reg_num).unwrap()),
+                    );
                 }
             }
             0x8a => {
@@ -821,13 +793,12 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        self.regs.write8(
-                            Reg8::from_num(opcode_reg).unwrap(),
-                            self.regs.read8(Reg8::from_num(opcode_rm).unwrap()),
-                        );
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    self.regs.write8(
+                        Reg8::from_num(reg_num).unwrap(),
+                        self.regs.read8(Reg8::from_num(opcode_rm).unwrap()),
+                    );
                 }
             }
             0x8b => {
@@ -843,13 +814,12 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        self.regs.write16(
-                            Reg16::from_num(opcode_reg).unwrap(),
-                            self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
-                        );
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    self.regs.write16(
+                        Reg16::from_num(reg_num).unwrap(),
+                        self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
+                    );
                 }
             }
             0x8c => {
@@ -865,13 +835,12 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        self.regs.write16(
-                            Reg16::from_num(opcode_rm).unwrap(),
-                            self.regs.readseg16(SegReg::from_num(opcode_reg).unwrap()),
-                        );
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    self.regs.write16(
+                        Reg16::from_num(opcode_rm).unwrap(),
+                        self.regs.readseg16(SegReg::from_num(reg_num).unwrap()),
+                    );
                 }
             }
             0x8e => {
@@ -887,13 +856,12 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                if let Operand::Register(opcode_reg) = opcode_params.reg {
-                    if let Operand::Register(opcode_rm) = opcode_params.rm {
-                        self.regs.writeseg16(
-                            SegReg::from_num(opcode_reg).unwrap(),
-                            self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
-                        );
-                    }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    self.regs.writeseg16(
+                        SegReg::from_num(reg_num).unwrap(),
+                        self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
+                    );
                 }
             }
             0x9e => {
@@ -1086,25 +1054,25 @@ impl Cpu8086 {
                 match group_op {
                     4 => {
                         println!("shl reg, 1");
-                        if let Operand::Register(opcode_reg) = opcode_params.rm {
-                            let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let mut reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
                             let overflow_calc = ((reg >> 7) & 1) ^ ((reg >> 6) & 1);
                             self.regs.flags.set(Flags::OVERFLOW, overflow_calc == 1);
                             reg = reg.wrapping_shl(1);
                             self.set_pzs8(reg);
-                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), reg);
                         }
                     }
                     5 => {
                         println!("shr reg, 1");
-                        if let Operand::Register(opcode_reg) = opcode_params.rm {
-                            let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let mut reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
                             self.regs.flags.set(Flags::OVERFLOW, (reg & 0x80) == 0x80);
                             reg = reg.wrapping_shr(1);
                             self.set_pzs8(reg);
-                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), reg);
                         }
                     }
                     _ => panic!("Unimplemented group opcode!"),
@@ -1127,29 +1095,29 @@ impl Cpu8086 {
                     4 => {
                         println!("shl reg, cl");
                         let mut count = self.regs.read8(Reg8::CL);
-                        if let Operand::Register(opcode_reg) = opcode_params.rm {
-                            let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let mut reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             while count != 0 {
                                 self.regs.flags.set(Flags::CARRY, (reg & 0x80) == 0x80);
                                 reg = reg.wrapping_shl(1);
                                 count = count.wrapping_sub(1);
                             }
                             self.set_pzs8(reg);
-                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), reg);
                         }
                     }
                     5 => {
                         println!("shr reg, cl");
                         let mut count = self.regs.read8(Reg8::CL);
-                        if let Operand::Register(opcode_reg) = opcode_params.rm {
-                            let mut reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let mut reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             while count != 0 {
                                 self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
                                 reg = reg.wrapping_shr(1);
                                 count = count.wrapping_sub(1);
                             }
                             self.set_pzs8(reg);
-                            self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), reg);
                         }
                     }
                     _ => panic!("Unimplemented group opcode!"),
@@ -1240,8 +1208,8 @@ impl Cpu8086 {
                 match group_op {
                     0 => {
                         println!("inc rm8");
-                        if let Operand::Register(opcode_reg) = opcode_params.rm {
-                            let reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             let result = reg.wrapping_add(1);
                             self.set_pzs8(result);
                             self.regs.flags.set(
@@ -1252,13 +1220,13 @@ impl Cpu8086 {
                                 .flags
                                 .set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
                             self.regs
-                                .write8(Reg8::from_num(opcode_reg).unwrap(), result);
+                                .write8(Reg8::from_num(reg_num).unwrap(), result);
                         }
                     }
                     1 => {
                         println!("dec rm8");
-                        if let Operand::Register(opcode_reg) = opcode_params.rm {
-                            let reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             let result = reg.wrapping_sub(1);
                             self.set_pzs8(result);
                             self.regs
@@ -1268,7 +1236,7 @@ impl Cpu8086 {
                                 .flags
                                 .set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
                             self.regs
-                                .write8(Reg8::from_num(opcode_reg).unwrap(), result);
+                                .write8(Reg8::from_num(reg_num).unwrap(), result);
                         }
                     }
                     _ => panic!("Unimplemented group opcode!"),

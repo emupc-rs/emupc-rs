@@ -33,7 +33,7 @@ pub type WordOperand = Operand;
 
 #[derive(PartialEq, Debug)]
 pub struct OpcodeParams {
-    pub reg: Operand,
+    pub reg: u8,
     pub rm: Operand,
 }
 
@@ -76,10 +76,9 @@ impl Cpu8086 {
 
         match mode {
             3 => {
-                let operand_reg = Operand::Register(reg);
                 let operand_rm = Operand::Register(rm);
                 OpcodeParams {
-                    reg: operand_reg,
+                    reg: reg,
                     rm: operand_rm,
                 }
             }
