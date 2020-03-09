@@ -105,7 +105,7 @@ impl Cpu8086 {
                 let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
-                let mut rm : u8 = 0;
+                let mut rm: u8 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -133,7 +133,7 @@ impl Cpu8086 {
                 let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
-                let mut rm : u16 = 0;
+                let mut rm: u16 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -163,7 +163,7 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
-                let mut rm : u8 = 0;
+                let mut rm: u8 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -186,7 +186,7 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
-                let mut rm : u16 = 0;
+                let mut rm: u16 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -209,7 +209,7 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
-                let mut rm : u8 = 0;
+                let mut rm: u8 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -232,7 +232,7 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
-                let mut rm : u16 = 0;
+                let mut rm: u16 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -327,7 +327,7 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
-                let mut rm : u8 = 0;
+                let mut rm: u8 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -350,7 +350,7 @@ impl Cpu8086 {
                 self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
-                let mut rm : u8 = 0;
+                let mut rm: u8 = 0;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
@@ -790,7 +790,7 @@ impl Cpu8086 {
                         self.regs.read8(Reg8::from_num(opcode_rm).unwrap()),
                     );
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
-                    let rm = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm)
+                    let rm = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
                     self.regs.write8(Reg8::from_num(reg_num).unwrap(), rm);
                 }
             }
@@ -810,7 +810,7 @@ impl Cpu8086 {
                         self.regs.read16(Reg16::from_num(opcode_rm).unwrap()),
                     );
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
-                    let rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm)
+                    let rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
                     self.regs.write16(Reg16::from_num(reg_num).unwrap(), rm);
                 }
             }
@@ -857,7 +857,7 @@ impl Cpu8086 {
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
                     self.regs.writeseg16(
                         SegReg::from_num(reg_num).unwrap(),
-                        self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm)
+                        self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm),
                     );
                 }
             }
