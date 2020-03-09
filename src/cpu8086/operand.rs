@@ -49,13 +49,12 @@ impl Cpu8086 {
             6 => {
                 if mode == 0 {
                     None
-                }
-                else {
+                } else {
                     Some(AddrType::Bp)
                 }
-            },
+            }
             7 => Some(AddrType::Bx),
-            _ => panic!("Invalid address type!")
+            _ => panic!("Invalid address type!"),
         }
     }
     pub fn get_disp_type_from_modrm(modrm: u8) -> Option<DisplacementType> {
@@ -65,14 +64,13 @@ impl Cpu8086 {
             0 => {
                 if rm == 6 {
                     Some(DisplacementType::Word)
-                }
-                else {
+                } else {
                     None
                 }
-            },
+            }
             1 => Some(DisplacementType::Byte),
             2 => Some(DisplacementType::Word),
-            _ => panic!("Invalid displacement type!")
+            _ => panic!("Invalid displacement type!"),
         }
     }
     pub fn get_offset(&self, addr_type: AddrType, offset: u16) -> u16 {
@@ -88,7 +86,11 @@ impl Cpu8086 {
         };
         base + offset
     }
-    pub fn get_operand_seg(&self, addr_type: Option<AddrType>, disp_type: Option<DisplacementType>) -> SegReg {
+    pub fn get_operand_seg(
+        &self,
+        addr_type: Option<AddrType>,
+        disp_type: Option<DisplacementType>,
+    ) -> SegReg {
         match self.seg_override {
             Some(segment) => segment,
             None => match addr_type {
@@ -106,7 +108,11 @@ impl Cpu8086 {
         }
     }
 
-    pub fn get_opcode_params_from_modrm<T: Cpu8086Context>(&mut self, ctx: &mut T, modrm: u8) -> OpcodeParams {
+    pub fn get_opcode_params_from_modrm<T: Cpu8086Context>(
+        &mut self,
+        ctx: &mut T,
+        modrm: u8,
+    ) -> OpcodeParams {
         let mode = (modrm & 0xc0) >> 6;
         let reg = (modrm & 0x38) >> 3;
         let rm = modrm & 7;
@@ -121,20 +127,23 @@ impl Cpu8086 {
                 match disp_type {
                     None => {
                         displacement = 0;
-                    },
+                    }
                     Some(DisplacementType::Byte) => {
-                        displacement = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip) as u16;
+                        displacement =
+                            self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip)
+                                as u16;
                         self.regs.ip = self.regs.ip.wrapping_add(1);
-                    },
+                    }
                     Some(DisplacementType::Word) => {
-                        displacement = self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
+                        displacement =
+                            self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
                         self.regs.ip = self.regs.ip.wrapping_add(2);
                     }
                 }
                 match addr_type {
                     None => {
                         addr = displacement;
-                    },
+                    }
                     Some(_) => {
                         addr = self.get_offset(addr_type.unwrap(), displacement);
                     }
@@ -144,11 +153,12 @@ impl Cpu8086 {
                     reg: reg,
                     rm: operand_rm,
                 }
-            },
+            }
             1 => {
                 let addr_type = Cpu8086::get_addr_type_from_modrm(modrm);
                 let addr: u16;
-                let displacement: u16 = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip) as u16;
+                let displacement: u16 =
+                    self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip) as u16;
                 let segment: SegReg = self.get_operand_seg(addr_type, Some(DisplacementType::Byte));
                 self.regs.ip = self.regs.ip.wrapping_add(1);
                 match addr_type {
@@ -162,11 +172,12 @@ impl Cpu8086 {
                     reg: reg,
                     rm: operand_rm,
                 }
-            },
+            }
             2 => {
                 let addr_type = Cpu8086::get_addr_type_from_modrm(modrm);
                 let addr: u16;
-                let displacement: u16 = self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
+                let displacement: u16 =
+                    self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
                 let segment: SegReg = self.get_operand_seg(addr_type, Some(DisplacementType::Byte));
                 self.regs.ip = self.regs.ip.wrapping_add(2);
                 match addr_type {
@@ -180,7 +191,7 @@ impl Cpu8086 {
                     reg: reg,
                     rm: operand_rm,
                 }
-            },
+            }
             3 => {
                 let operand_rm = Operand::Register(rm);
                 OpcodeParams {

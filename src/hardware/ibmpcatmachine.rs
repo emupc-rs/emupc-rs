@@ -41,13 +41,14 @@ impl<'a> Cpu286Context for IbmPcAtHardware {
     }
     fn mem_write_byte(&mut self, addr: u32, value: u8) {
         let actual_addr = addr & 0xff_ffff;
-        if let 0..=0x0a_0000 = actual_addr { self.ram[(actual_addr & 0xffff) as usize] = value }
+        if let 0..=0x0a_0000 = actual_addr {
+            self.ram[(actual_addr & 0xffff) as usize] = value
+        }
     }
 
     fn io_read_byte(&mut self, _addr: u16) -> u8 {
         0xff
     }
 
-    fn io_write_byte(&mut self, _addr: u16, _value: u8) {
-    }
+    fn io_write_byte(&mut self, _addr: u16, _value: u8) {}
 }

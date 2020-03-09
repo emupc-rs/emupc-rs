@@ -116,10 +116,8 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                    self.regs
-                        .write8(Reg8::from_num(reg_num).unwrap(), result);
-                }
-                else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
+                } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
                     let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                     let rm = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
                     let result = reg.wrapping_add(rm);
@@ -131,8 +129,7 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                    self.regs
-                        .write8(Reg8::from_num(reg_num).unwrap(), result);
+                    self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x03 => {
@@ -161,8 +158,7 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                    self.regs
-                        .write16(Reg16::from_num(reg_num).unwrap(), result);
+                    self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x0a => {
@@ -185,8 +181,7 @@ impl Cpu8086 {
                     let result = self.regs.read8(Reg8::from_num(reg_num).unwrap())
                         | self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                     self.set_pzs8(result);
-                    self.regs
-                        .write8(Reg8::from_num(reg_num).unwrap(), result);
+                    self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x0b => {
@@ -209,8 +204,7 @@ impl Cpu8086 {
                     let result = self.regs.read16(Reg16::from_num(reg_num).unwrap())
                         | self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                     self.set_pzs16(result);
-                    self.regs
-                        .write16(Reg16::from_num(reg_num).unwrap(), result);
+                    self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x22 => {
@@ -233,8 +227,7 @@ impl Cpu8086 {
                     let result = self.regs.read8(Reg8::from_num(reg_num).unwrap())
                         & self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                     self.set_pzs8(result);
-                    self.regs
-                        .write8(Reg8::from_num(reg_num).unwrap(), result);
+                    self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x23 => {
@@ -257,8 +250,7 @@ impl Cpu8086 {
                     let result = self.regs.read16(Reg16::from_num(reg_num).unwrap())
                         & self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                     self.set_pzs16(result);
-                    self.regs
-                        .write16(Reg16::from_num(reg_num).unwrap(), result);
+                    self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x26 => {
@@ -293,8 +285,7 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                    self.regs
-                        .write8(Reg8::from_num(reg_num).unwrap(), result);
+                    self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x2b => {
@@ -325,8 +316,7 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
-                    self.regs
-                        .write16(Reg16::from_num(reg_num).unwrap(), result);
+                    self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x2e => {
@@ -355,8 +345,7 @@ impl Cpu8086 {
                     let result = self.regs.read8(Reg8::from_num(reg_num).unwrap())
                         ^ self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                     self.set_pzs8(result);
-                    self.regs
-                        .write8(Reg8::from_num(reg_num).unwrap(), result);
+                    self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
             0x33 => {
@@ -379,8 +368,7 @@ impl Cpu8086 {
                     let result = self.regs.read16(Reg16::from_num(reg_num).unwrap())
                         ^ self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                     self.set_pzs16(result);
-                    self.regs
-                        .write16(Reg16::from_num(reg_num).unwrap(), result);
+                    self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
             0x36 => {
@@ -1151,7 +1139,8 @@ impl Cpu8086 {
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 ) as i8 as i16;
-                self.regs.write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
+                self.regs
+                    .write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
                 self.regs.ip = self.regs.ip.wrapping_add(2);
                 if self.regs.read16(Reg16::CX) != 0 {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
@@ -1253,8 +1242,7 @@ impl Cpu8086 {
                             self.regs
                                 .flags
                                 .set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
-                            self.regs
-                                .write8(Reg8::from_num(reg_num).unwrap(), result);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                         }
                     }
                     1 => {
@@ -1269,8 +1257,7 @@ impl Cpu8086 {
                             self.regs
                                 .flags
                                 .set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
-                            self.regs
-                                .write8(Reg8::from_num(reg_num).unwrap(), result);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                         }
                     }
                     _ => panic!("Unimplemented group opcode!"),
