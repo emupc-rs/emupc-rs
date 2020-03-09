@@ -65,6 +65,18 @@ impl Cpu8086 {
         self.regs.flags.set(Flags::PARITY, parity != 0);
     }
 
+    pub fn set_pzs8(&mut self, data: u8) {
+        self.set_parity_flag(data as u16);
+        self.regs.flags.set(Flags::ZERO, data == 0);
+        self.regs.flags.set(Flags::SIGN, (data & 0x80) == 0x80);
+    }
+
+    pub fn set_pzs16(&mut self, data: u16) {
+        self.set_parity_flag(data);
+        self.regs.flags.set(Flags::ZERO, data == 0);
+        self.regs.flags.set(Flags::SIGN, (data & 0x8000) == 0x8000);
+    }
+
     pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
@@ -97,9 +109,7 @@ impl Cpu8086 {
                         let reg = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
                         let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                         let result = reg - rm;
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                        self.set_parity_flag(result as u16);
+                        self.set_pzs8(result);
                         self.regs.flags.set(
                             Flags::OVERFLOW,
                             ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
@@ -133,11 +143,7 @@ impl Cpu8086 {
                         let reg = self.regs.read16(Reg16::from_num(opcode_reg).unwrap());
                         let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                         let result = reg - rm;
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs
-                            .flags
-                            .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                        self.set_parity_flag(result);
+                        self.set_pzs16(result);
                         self.regs.flags.set(
                             Flags::OVERFLOW,
                             ((result ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
@@ -170,9 +176,7 @@ impl Cpu8086 {
                     if let Operand::Register(opcode_rm) = opcode_params.rm {
                         let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
                             | self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                        self.set_parity_flag(result as u16);
+                        self.set_pzs8(result);
                         self.regs
                             .write8(Reg8::from_num(opcode_reg).unwrap(), result);
                     }
@@ -198,11 +202,7 @@ impl Cpu8086 {
                     if let Operand::Register(opcode_rm) = opcode_params.rm {
                         let result = self.regs.read16(Reg16::from_num(opcode_reg).unwrap())
                             | self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs
-                            .flags
-                            .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                        self.set_parity_flag(result);
+                        self.set_pzs16(result);
                         self.regs
                             .write16(Reg16::from_num(opcode_reg).unwrap(), result);
                     }
@@ -228,9 +228,7 @@ impl Cpu8086 {
                     if let Operand::Register(opcode_rm) = opcode_params.rm {
                         let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
                             & self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                        self.set_parity_flag(result as u16);
+                        self.set_pzs8(result);
                         self.regs
                             .write8(Reg8::from_num(opcode_reg).unwrap(), result);
                     }
@@ -256,11 +254,7 @@ impl Cpu8086 {
                     if let Operand::Register(opcode_rm) = opcode_params.rm {
                         let result = self.regs.read16(Reg16::from_num(opcode_reg).unwrap())
                             & self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs
-                            .flags
-                            .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                        self.set_parity_flag(result);
+                        self.set_pzs16(result);
                         self.regs
                             .write16(Reg16::from_num(opcode_reg).unwrap(), result);
                     }
@@ -293,9 +287,7 @@ impl Cpu8086 {
                         let reg = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
                         let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
                         let result = reg - rm;
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                        self.set_parity_flag(result as u16);
+                        self.set_pzs8(result);
                         self.regs.flags.set(
                             Flags::OVERFLOW,
                             ((reg ^ rm) & (result ^ reg) & 0x80) == 0x80,
@@ -329,11 +321,7 @@ impl Cpu8086 {
                         let reg = self.regs.read16(Reg16::from_num(opcode_reg).unwrap());
                         let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
                         let result = reg - rm;
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs
-                            .flags
-                            .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                        self.set_parity_flag(result);
+                        self.set_pzs16(result);
                         self.regs.flags.set(
                             Flags::OVERFLOW,
                             ((reg ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
@@ -372,9 +360,7 @@ impl Cpu8086 {
                     if let Operand::Register(opcode_rm) = opcode_params.rm {
                         let result = self.regs.read8(Reg8::from_num(opcode_reg).unwrap())
                             ^ self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                        self.set_parity_flag(result as u16);
+                        self.set_pzs8(result);
                         self.regs
                             .write8(Reg8::from_num(opcode_reg).unwrap(), result);
                     }
@@ -400,11 +386,7 @@ impl Cpu8086 {
                     if let Operand::Register(opcode_rm) = opcode_params.rm {
                         let result = self.regs.read16(Reg16::from_num(opcode_reg).unwrap())
                             ^ self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
-                        self.regs.flags.set(Flags::ZERO, result == 0);
-                        self.regs
-                            .flags
-                            .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                        self.set_parity_flag(result);
+                        self.set_pzs16(result);
                         self.regs
                             .write16(Reg16::from_num(opcode_reg).unwrap(), result);
                     }
@@ -426,11 +408,7 @@ impl Cpu8086 {
                 println!("inc ax");
                 let reg: u16 = self.regs.read16(Reg16::AX);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -445,11 +423,7 @@ impl Cpu8086 {
                 println!("inc cx");
                 let reg: u16 = self.regs.read16(Reg16::CX);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -464,11 +438,7 @@ impl Cpu8086 {
                 println!("inc dx");
                 let reg: u16 = self.regs.read16(Reg16::DX);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -483,11 +453,7 @@ impl Cpu8086 {
                 println!("inc bx");
                 let reg: u16 = self.regs.read16(Reg16::BX);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -502,11 +468,7 @@ impl Cpu8086 {
                 println!("inc sp");
                 let reg: u16 = self.regs.read16(Reg16::SP);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -521,11 +483,7 @@ impl Cpu8086 {
                 println!("inc bp");
                 let reg: u16 = self.regs.read16(Reg16::BP);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -540,11 +498,7 @@ impl Cpu8086 {
                 println!("inc si");
                 let reg: u16 = self.regs.read16(Reg16::SI);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -559,11 +513,7 @@ impl Cpu8086 {
                 println!("inc di");
                 let reg: u16 = self.regs.read16(Reg16::DI);
                 let result = reg.wrapping_add(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((result ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -578,11 +528,7 @@ impl Cpu8086 {
                 println!("dec ax");
                 let reg: u16 = self.regs.read16(Reg16::AX);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -597,11 +543,7 @@ impl Cpu8086 {
                 println!("dec cx");
                 let reg: u16 = self.regs.read16(Reg16::CX);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -616,11 +558,7 @@ impl Cpu8086 {
                 println!("dec dx");
                 let reg: u16 = self.regs.read16(Reg16::DX);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -635,11 +573,7 @@ impl Cpu8086 {
                 println!("dec bx");
                 let reg: u16 = self.regs.read16(Reg16::BX);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -654,11 +588,7 @@ impl Cpu8086 {
                 println!("dec sp");
                 let reg: u16 = self.regs.read16(Reg16::SP);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -673,11 +603,7 @@ impl Cpu8086 {
                 println!("dec bp");
                 let reg: u16 = self.regs.read16(Reg16::BP);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -692,11 +618,7 @@ impl Cpu8086 {
                 println!("dec si");
                 let reg: u16 = self.regs.read16(Reg16::SI);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -711,11 +633,7 @@ impl Cpu8086 {
                 println!("dec di");
                 let reg: u16 = self.regs.read16(Reg16::DI);
                 let result = reg.wrapping_sub(1);
-                self.regs.flags.set(Flags::ZERO, result == 0);
-                self.regs
-                    .flags
-                    .set(Flags::SIGN, (result & 0x8000) == 0x8000);
-                self.set_parity_flag(result);
+                self.set_pzs16(result);
                 self.regs.flags.set(
                     Flags::OVERFLOW,
                     ((reg ^ 1) & (result ^ reg) & 0x8000) == 0x8000,
@@ -1174,6 +1092,7 @@ impl Cpu8086 {
                             let overflow_calc = ((reg >> 7) & 1) ^ ((reg >> 6) & 1);
                             self.regs.flags.set(Flags::OVERFLOW, overflow_calc == 1);
                             reg = reg.wrapping_shl(1);
+                            self.set_pzs8(reg);
                             self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
                         }
                     }
@@ -1184,6 +1103,7 @@ impl Cpu8086 {
                             self.regs.flags.set(Flags::CARRY, (reg & 1) == 1);
                             self.regs.flags.set(Flags::OVERFLOW, (reg & 0x80) == 0x80);
                             reg = reg.wrapping_shr(1);
+                            self.set_pzs8(reg);
                             self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
                         }
                     }
@@ -1214,6 +1134,7 @@ impl Cpu8086 {
                                 reg = reg.wrapping_shl(1);
                                 count = count.wrapping_sub(1);
                             }
+                            self.set_pzs8(reg);
                             self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
                         }
                     }
@@ -1227,6 +1148,7 @@ impl Cpu8086 {
                                 reg = reg.wrapping_shr(1);
                                 count = count.wrapping_sub(1);
                             }
+                            self.set_pzs8(reg);
                             self.regs.write8(Reg8::from_num(opcode_reg).unwrap(), reg);
                         }
                     }
@@ -1321,9 +1243,7 @@ impl Cpu8086 {
                         if let Operand::Register(opcode_reg) = opcode_params.rm {
                             let reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
                             let result = reg.wrapping_add(1);
-                            self.regs.flags.set(Flags::ZERO, result == 0);
-                            self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                            self.set_parity_flag(result as u16);
+                            self.set_pzs8(result);
                             self.regs.flags.set(
                                 Flags::OVERFLOW,
                                 ((result ^ 1) & (result ^ reg) & 0x80) == 0x80,
@@ -1340,9 +1260,7 @@ impl Cpu8086 {
                         if let Operand::Register(opcode_reg) = opcode_params.rm {
                             let reg: u8 = self.regs.read8(Reg8::from_num(opcode_reg).unwrap());
                             let result = reg.wrapping_sub(1);
-                            self.regs.flags.set(Flags::ZERO, result == 0);
-                            self.regs.flags.set(Flags::SIGN, (result & 0x80) == 0x80);
-                            self.set_parity_flag(result as u16);
+                            self.set_pzs8(result);
                             self.regs
                                 .flags
                                 .set(Flags::OVERFLOW, ((reg ^ 1) & (result ^ reg) & 0x80) == 0x80);
