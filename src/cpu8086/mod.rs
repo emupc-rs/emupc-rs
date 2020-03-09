@@ -1058,7 +1058,6 @@ impl Cpu8086 {
             0xc3 => {
                 println!("ret");
                 self.regs.ip = self.pop16(ctx);
-                self.regs.ip = self.regs.ip.wrapping_add(2);
             }
             0xd0 => {
                 let modrm = self.mem_read_byte(
