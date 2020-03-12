@@ -13,6 +13,6 @@ fn main() {
 
     //machine.cpu.tick(&mut machine.hardware);
     loop {
-        machine.cpu.tick(&mut machine.hardware);
+        let _cycles = machine.cpu.tick(&mut machine.hardware);
     }
 }

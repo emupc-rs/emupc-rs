@@ -83,7 +83,7 @@ impl Cpu8086 {
         self.mem_read_word(ctx, self.regs.readseg16(SegReg::SS), stack_pointer)
     }
 
-    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) {
+    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) -> usize {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
             "Opcode {:#02x} CS {:#04x} IP {:#04x}\nGPRs {:x?} FLAGS {:#04x}",
@@ -120,6 +120,9 @@ impl Cpu8086 {
                 self.regs
                     .flags
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                self.regs
+                    .flags
+                    .set(Flags::CARRY, (rm & 0x80) > (result & 0x80));
                 self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
             }
             0x03 => {
@@ -148,6 +151,9 @@ impl Cpu8086 {
                 self.regs
                     .flags
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                self.regs
+                    .flags
+                    .set(Flags::CARRY, (rm & 0x8000) > (result & 0x8000));
                 self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
             }
             0x0a => {
@@ -274,6 +280,9 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .flags
+                        .set(Flags::CARRY, (rm & 0x80) > (reg & 0x80));
                     self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
                 }
             }
@@ -290,8 +299,6 @@ impl Cpu8086 {
                     Operand::Register(_) => (),
                     _ => panic!("Memory operands not supported yet!"),
                 }
-                self.regs.flags.set(Flags::OVERFLOW, false);
-                self.regs.flags.set(Flags::CARRY, false);
                 let reg_num = (modrm & 0x38) >> 3;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
@@ -305,6 +312,9 @@ impl Cpu8086 {
                     self.regs
                         .flags
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .flags
+                        .set(Flags::CARRY, (rm & 0x8000) > (reg & 0x8000));
                     self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
                 }
             }
@@ -852,8 +862,7 @@ impl Cpu8086 {
                     );
                 } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
                     let rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
-                    self.regs.writeseg16(
-                        SegReg::from_num(reg_num).unwrap(), rm);
+                    self.regs.writeseg16(SegReg::from_num(reg_num).unwrap(), rm);
                 }
             }
             0x9e => {
@@ -1133,6 +1142,17 @@ impl Cpu8086 {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
+            0xe4 => {
+                println!("in al, imm");
+                let imm_value = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                let result = self.io_read_byte(ctx, imm_value as u16);
+                self.regs.write8(Reg8::AL, result);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+            }
             0xe6 => {
                 println!("out imm, al");
                 let imm_value = self.mem_read_byte(
@@ -1140,7 +1160,7 @@ impl Cpu8086 {
                     self.regs.readseg16(SegReg::CS),
                     self.regs.ip.wrapping_add(1),
                 );
-                self.io_write_byte(ctx, self.regs.read8(Reg8::AL) as u16, imm_value);
+                self.io_write_byte(ctx, imm_value as u16, self.regs.read8(Reg8::AL));
                 self.regs.ip = self.regs.ip.wrapping_add(2);
             }
             0xe9 => {
@@ -1253,5 +1273,6 @@ impl Cpu8086 {
             _ => panic!("Unhandled opcode!"),
         }
         self.seg_override = None;
+        1
     }
 }

@@ -149,8 +149,9 @@ impl Cpu8086 {
                     }
                 }
                 let operand_rm = Operand::Address(segment, addr);
+                let operand_reg = reg;
                 OpcodeParams {
-                    reg: reg,
+                    reg: operand_reg,
                     rm: operand_rm,
                 }
             }
@@ -168,8 +169,9 @@ impl Cpu8086 {
                     }
                 }
                 let operand_rm = Operand::Address(segment, addr);
+                let operand_reg = reg;
                 OpcodeParams {
-                    reg: reg,
+                    reg: operand_reg,
                     rm: operand_rm,
                 }
             }
@@ -187,15 +189,17 @@ impl Cpu8086 {
                     }
                 }
                 let operand_rm = Operand::Address(segment, addr);
+                let operand_reg = reg;
                 OpcodeParams {
-                    reg: reg,
+                    reg: operand_reg,
                     rm: operand_rm,
                 }
             }
             3 => {
                 let operand_rm = Operand::Register(rm);
+                let operand_reg = reg;
                 OpcodeParams {
-                    reg: reg,
+                    reg: operand_reg,
                     rm: operand_rm,
                 }
             }
