@@ -1,5 +1,6 @@
 use operand::*;
 use registers::*;
+use crate::scheduler::Jiffies;
 
 pub mod operand;
 pub mod registers;
@@ -83,7 +84,7 @@ impl Cpu8086 {
         self.mem_read_word(ctx, self.regs.readseg16(SegReg::SS), stack_pointer)
     }
 
-    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) -> usize {
+    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) -> Jiffies {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
             "Opcode {:#02x} CS {:#04x} IP {:#04x}\nGPRs {:x?} FLAGS {:#04x}",
@@ -1273,6 +1274,6 @@ impl Cpu8086 {
             _ => panic!("Unhandled opcode!"),
         }
         self.seg_override = None;
-        1
+        4
     }
 }
