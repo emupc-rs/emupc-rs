@@ -18,8 +18,10 @@ impl SchedulerThread {
         }
     }
 
-    pub fn step(&mut self, cycles: u128) {
+    pub fn step<F>(&mut self, cycles: u128, mut func: F) -> u128 where F: FnMut(u128) -> u128
+    {
         self.steps += self.scalar * cycles;
+        func(cycles)
     }
 }
 
@@ -35,7 +37,7 @@ impl Scheduler {
         }
     }
 
-    pub fn synchronize(&mut self) -> Jiffies {
+    pub fn synchronize(&mut self) {
         let mut minimum_val: Jiffies = self.threads[0].steps;
 
         for thread in &self.threads {
@@ -47,28 +49,5 @@ impl Scheduler {
         for thread in &mut self.threads {
             thread.steps -= minimum_val;
         }
-
-        let threshold: Jiffies  = 10;
-        let mut min_steps: Jiffies = 0;
-        let mut max_steps: Jiffies = 0;
-        for thread in &self.threads {
-            if thread.steps > max_steps {
-                max_steps = thread.steps;
-            }
-        }
-        loop {
-            if max_steps >= threshold {
-                for thread in &mut self.threads {
-                    thread.step(threshold);
-                    min_steps += threshold;
-                }
-                max_steps -= threshold;
-            }
-            else {
-                break;
-            }
-        }
-
-        min_steps
     }
 }

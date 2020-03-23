@@ -19,8 +19,10 @@ fn main() {
 
     //machine.cpu.tick(&mut machine.hardware);
     loop {
-        let cycles = machine.cpu.tick(&mut machine.hardware);
-        cpu_thread.step(cycles);
+        let _cycles =
+        cpu_thread.step(4, |_cycles| {
+            machine.cpu.tick(&mut machine.hardware)
+        });
         scheduler.synchronize();
     }
 }
