@@ -1,4 +1,4 @@
-use crate::scheduler::Jiffies;
+//use crate::scheduler::Jiffies;
 use operand::*;
 use registers::*;
 
@@ -84,7 +84,7 @@ impl Cpu8086 {
         self.mem_read_word(ctx, self.regs.readseg16(SegReg::SS), stack_pointer)
     }
 
-    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) -> Jiffies {
+    pub fn tick<T: Cpu8086Context>(&mut self, ctx: &mut T) -> u128 {
         self.opcode = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
         println!(
             "Opcode {:#02x} CS {:#04x} IP {:#04x}\nGPRs {:x?} FLAGS {:#04x}",
