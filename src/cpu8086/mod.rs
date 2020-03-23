@@ -1,6 +1,6 @@
+use crate::scheduler::Jiffies;
 use operand::*;
 use registers::*;
-use crate::scheduler::Jiffies;
 
 pub mod operand;
 pub mod registers;

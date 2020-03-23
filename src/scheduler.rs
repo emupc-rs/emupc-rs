@@ -18,7 +18,9 @@ impl SchedulerThread {
         }
     }
 
-    pub fn step<F>(&mut self, cycles: u128, mut func: F) -> u128 where F: FnMut(u128) -> u128
+    pub fn step<F>(&mut self, cycles: u128, mut func: F) -> u128
+    where
+        F: FnMut(u128) -> u128,
     {
         self.steps += self.scalar * cycles;
         func(cycles)
