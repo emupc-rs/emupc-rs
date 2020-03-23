@@ -13,7 +13,6 @@ pub struct SchedulerThread {
     pub scalar: Jiffies,
     pub steps: Jiffies,
     pub next_event_time: Jiffies,
-    pub next_event_func: fn(),
     pub entries: Vec<SchedulerThreadEntry>,
 }
 
@@ -43,6 +42,8 @@ impl SchedulerThread {
         let mut next_event_time: u128;
         for i in (0..entries.len()) {
             if entries[i].time <= self.steps {
+                // run the callback
+                (entries[i].func)();
                 // remove entry
                 entries.remove(i);
             } else if entries[i].time <= next_event_time {
@@ -51,13 +52,11 @@ impl SchedulerThread {
             }
         }
 
-        self.next_event_func = next_event.func;
         self.next_event_time = next_event.time;
     }
 
     pub fn synchronize(&mut self) {
         if self.steps >= self.next_event_time {
-            (self.next_event_func)();// process event
             calculate_next_event();// calculate updated next_event value
         }
     }
