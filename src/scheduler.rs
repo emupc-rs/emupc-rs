@@ -1,13 +1,13 @@
 /// Amount of time in units of 2^-64 seconds.
 pub type Jiffies = u128;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct SchedulerThreadEntry {
     pub func: fn(),
     pub time: Jiffies, 
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct SchedulerThread {
     pub frequency: u128,
     pub scalar: Jiffies,
@@ -23,6 +23,8 @@ impl SchedulerThread {
             // u64::max_value() here is supposed to be the amount of Jiffies one second is.
             scalar: (u64::max_value() as u128 / freq),
             steps: 0,
+            next_event_time: 0,
+            entries: Vec::new(),
         }
     }
 
@@ -38,60 +40,52 @@ impl SchedulerThread {
         // iterate through the list
         // find the next event
         // remove events in the past
-        let mut next_event: SchedulerThreadEntry;
-        let mut next_event_time: u128;
-        for i in (0..entries.len()) {
-            if entries[i].time <= self.steps {
+        let mut next_event_time: u128 = 0;
+        for i in (0..self.entries.len()) {
+            if self.entries[i].time <= self.steps {
                 // run the callback
-                (entries[i].func)();
+                (self.entries[i].func)();
                 // remove entry
-                entries.remove(i);
-            } else if entries[i].time <= next_event_time {
-                next_event_time = entries[i].time;
-                next_event = entries[i];
+                self.entries.remove(i);
+            } else if self.entries[i].time <= next_event_time {
+                next_event_time = self.entries[i].time;
             }
         }
 
-        self.next_event_time = next_event.time;
+        self.next_event_time = next_event_time;
     }
 
     pub fn synchronize(&mut self) {
         if self.steps >= self.next_event_time {
-            calculate_next_event();// calculate updated next_event value
+            self.calculate_next_event();// calculate updated next_event value
         }
     }
 
     pub fn schedule(&mut self, cycles: u128, func: fn()) {
         // store func + cycles
-        entries.push(SchedulerThreadEntry { func: func, time: self.steps + cycles * self.scalar});
+        self.entries.push(SchedulerThreadEntry { func: func, time: self.steps + cycles * self.scalar});
         // calculate updated next_event
-        calculate_next_event();
+        self.calculate_next_event();
     }
 }
 
 #[derive(Debug)]
-pub struct Scheduler {
-    pub threads: Vec<SchedulerThread>,
+pub struct Scheduler<'a> {
+    pub threads: Vec<&'a mut SchedulerThread>,
 }
 
-impl Scheduler {
-    pub fn new() -> Scheduler {
+impl<'a> Scheduler<'a> {
+    pub fn new() -> Scheduler<'a> {
         Scheduler {
             threads: Vec::new(),
         }
     }
 
-    // pub fn synchronize(&mut self) {
-    //     let mut minimum_val: Jiffies = self.threads[0].steps;
+    pub fn synchronize(&mut self) {
+        let minimum_val: Jiffies = self.threads.iter().min_by_key(|x| -> Jiffies {x.steps}).unwrap().steps;
 
-    //     for thread in &self.threads {
-    //         if thread.steps < minimum_val {
-    //            minimum_val = thread.steps;
-    //         }
-    //     }
-
-    //     for thread in &mut self.threads {
-    //         thread.steps -= minimum_val;
-    //     }
-    // }
+        for thread in &mut self.threads {
+            thread.steps -= minimum_val;
+        }
+    }
 }
