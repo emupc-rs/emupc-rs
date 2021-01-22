@@ -4,7 +4,7 @@ pub type Jiffies = u128;
 #[derive(Clone, Debug)]
 pub struct SchedulerThreadEntry {
     pub func: fn(),
-    pub time: Jiffies, 
+    pub time: Jiffies,
 }
 
 #[derive(Clone, Debug)]
@@ -41,7 +41,7 @@ impl SchedulerThread {
         // find the next event
         // remove events in the past
         let mut next_event_time: u128 = 0;
-        for i in (0..self.entries.len()) {
+        for i in 0..self.entries.len() {
             if self.entries[i].time <= self.steps {
                 // run the callback
                 (self.entries[i].func)();
@@ -57,13 +57,16 @@ impl SchedulerThread {
 
     pub fn synchronize(&mut self) {
         if self.steps >= self.next_event_time {
-            self.calculate_next_event();// calculate updated next_event value
+            self.calculate_next_event(); // calculate updated next_event value
         }
     }
 
     pub fn schedule(&mut self, cycles: u128, func: fn()) {
         // store func + cycles
-        self.entries.push(SchedulerThreadEntry { func: func, time: self.steps + cycles * self.scalar});
+        self.entries.push(SchedulerThreadEntry {
+            func: func,
+            time: self.steps + cycles * self.scalar,
+        });
         // calculate updated next_event
         self.calculate_next_event();
     }
@@ -82,10 +85,16 @@ impl<'a> Scheduler<'a> {
     }
 
     pub fn synchronize(&mut self) {
-        let minimum_val: Jiffies = self.threads.iter().min_by_key(|x| -> Jiffies {x.steps}).unwrap().steps;
+        let minimum_val: Jiffies = self
+            .threads
+            .iter()
+            .min_by_key(|x| -> Jiffies { x.steps })
+            .unwrap()
+            .steps;
 
         for thread in &mut self.threads {
             thread.steps -= minimum_val;
+            thread.synchronize();
         }
     }
 }

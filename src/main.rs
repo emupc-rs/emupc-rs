@@ -21,7 +21,8 @@ fn main() {
     loop {
         //let _cycles = cpu_thread.step(4, |_cycles| machine.cpu.tick(&mut machine.hardware));
         //machine.cpu.tick(&mut machine.hardware);
-        let _cycles = scheduler.threads[0].step(4, |_cycles| machine.cpu.tick(&mut machine.hardware));
+        let _cycles =
+            scheduler.threads[0].step(4, |_cycles| machine.cpu.tick(&mut machine.hardware));
         scheduler.synchronize();
     }
 }
