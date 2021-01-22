@@ -45,8 +45,8 @@ impl SchedulerThread {
             if self.entries[i].time <= self.steps {
                 // run the callback
                 (self.entries[i].func)();
-                // remove entry
-                self.entries.remove(i);
+            // remove entry
+            // self.entries.remove(i);
             } else if self.entries[i].time <= next_event_time {
                 next_event_time = self.entries[i].time;
             }
@@ -56,6 +56,7 @@ impl SchedulerThread {
     }
 
     pub fn synchronize(&mut self) {
+        self.steps += self.scalar;
         if self.steps >= self.next_event_time {
             self.calculate_next_event(); // calculate updated next_event value
         }
