@@ -182,7 +182,7 @@ impl Cpu286 {
                 println!("lahf");
                 self.regs.write8(
                     Reg8::AH,
-                    ((self.regs.flags.bits() & 0xd5) | (0x0002 as u16)) as u8,
+                    ((self.regs.flags.bits() & 0xd5) | (0x0002_u16)) as u8,
                 ); //Flags::DEFAULT
                 self.regs.ip = self.regs.ip.wrapping_add(1);
             }

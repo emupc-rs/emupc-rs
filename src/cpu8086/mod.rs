@@ -377,6 +377,68 @@ impl Cpu8086 {
                 self.regs.ip = self.regs.ip.wrapping_add(1);
                 self.tick(ctx);
             }
+            0x3a => {
+                println!("cmp reg8, rm8");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Memory operands not supported yet!"),
+                }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                    let rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                    let result = reg.wrapping_sub(rm);
+                    self.set_pzs8(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((reg ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .flags
+                        .set(Flags::CARRY, (rm & 0x80) > (reg & 0x80));
+                }
+            }
+            0x3b => {
+                println!("cmp reg16, rm16");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Memory operands not supported yet!"),
+                }
+                let reg_num = (modrm & 0x38) >> 3;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
+                    let rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                    let result = reg.wrapping_sub(rm);
+                    self.set_pzs16(result);
+                    self.regs.flags.set(
+                        Flags::OVERFLOW,
+                        ((reg ^ rm) & (result ^ reg) & 0x8000) == 0x8000,
+                    );
+                    self.regs
+                        .flags
+                        .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                    self.regs
+                        .flags
+                        .set(Flags::CARRY, (rm & 0x8000) > (reg & 0x8000));
+                }
+            }
             0x3e => {
                 println!("ds:");
                 self.seg_override = Some(SegReg::DS);
