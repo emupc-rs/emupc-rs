@@ -57,6 +57,18 @@ impl Cpu8086 {
         u16::from_le_bytes([lo, hi])
     }
 
+    pub fn mem_write_word<T: Cpu8086Context>(
+        &mut self,
+        ctx: &mut T,
+        seg: u16,
+        addr: u16,
+        value: u16,
+    ) {
+        let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xf_ffff;
+        ctx.mem_write_byte(masked_addr, value as u8);
+        ctx.mem_write_byte(masked_addr + 1, value >> 8);
+    }
+
     pub fn set_parity_flag(&mut self, mut data: u16) {
         let mut parity = 0;
         while data != 0 {
@@ -814,10 +826,6 @@ impl Cpu8086 {
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
                 let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
-                match opcode_params.rm {
-                    Operand::Register(_) => (),
-                    _ => panic!("Memory operands not supported yet!"),
-                }
                 let reg_num = (modrm & 0x38) >> 3;
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     self.regs.write8(
@@ -850,6 +858,13 @@ impl Cpu8086 {
                 if let Operand::Register(opcode_rm) = opcode_params.rm {
                     self.regs.write16(
                         Reg16::from_num(opcode_rm).unwrap(),
+                        self.regs.read16(Reg16::from_num(reg_num).unwrap()),
+                    );
+                } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    self.mem_write_word(
+                        ctx,
+                        self.regs.readseg16(segment),
+                        opcode_rm,
                         self.regs.read16(Reg16::from_num(reg_num).unwrap()),
                     );
                 }
