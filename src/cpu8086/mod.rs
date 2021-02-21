@@ -66,7 +66,7 @@ impl Cpu8086 {
     ) {
         let masked_addr = (((seg as u32) << 4) | addr as u32) & 0xf_ffff;
         ctx.mem_write_byte(masked_addr, value as u8);
-        ctx.mem_write_byte(masked_addr + 1, value >> 8);
+        ctx.mem_write_byte(masked_addr + 1, (value >> 8) as u8);
     }
 
     pub fn set_parity_flag(&mut self, mut data: u16) {
