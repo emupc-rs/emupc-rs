@@ -813,6 +813,43 @@ impl Cpu8086 {
                     self.regs.ip = self.regs.ip.wrapping_add(offset as u16);
                 }
             }
+            0x80 => {
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                match opcode_params.rm {
+                    Operand::Register(_) => (),
+                    _ => panic!("Opcode doesn't support memory operands!"),
+                }
+                let imm: u8 = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip.wrapping_add(1));
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                let group_op = (modrm & 0x38) >> 3;
+                match group_op {
+                    7 => {
+                        println!("cmp reg8, imm8");
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                            let result = reg.wrapping_sub(imm);
+                            self.set_pzs8(result);
+                            self.regs.flags.set(
+                                Flags::OVERFLOW,
+                                ((reg ^ imm) & (result ^ reg) & 0x80) == 0x80,
+                            );
+                            self.regs
+                                .flags
+                                .set(Flags::ADJUST, ((result ^ reg ^ imm) & 0x10) == 0x10);
+                            self.regs
+                                .flags
+                                .set(Flags::CARRY, (imm & 0x80) > (reg & 0x80));
+                        }
+                    }
+                    _ => panic!("Unimplemented group opcode!"),
+                }
+            }
             0x88 => {
                 println!("mov rm8, reg8");
                 let modrm = self.mem_read_byte(
