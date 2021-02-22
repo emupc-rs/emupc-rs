@@ -79,7 +79,7 @@ pub struct Scheduler<'a> {
 }
 
 impl<'a> Scheduler<'a> {
-    pub fn new() -> Scheduler<'a> {
+    pub fn new() -> Self{
         Scheduler {
             threads: Vec::new(),
         }
@@ -97,5 +97,11 @@ impl<'a> Scheduler<'a> {
             thread.steps -= minimum_val;
             thread.synchronize();
         }
+    }
+}
+
+impl<'a> Default for Scheduler<'a> {
+    fn default() -> Self {
+        Self::new()
     }
 }
