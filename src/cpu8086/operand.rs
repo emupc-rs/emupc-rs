@@ -1,4 +1,4 @@
-use crate::cpu8086::registers::*;
+use crate::{cpu8086::registers::*, hardware::IbmPc5150Machine};
 use crate::cpu8086::Cpu8086;
 use crate::cpu8086::Cpu8086Context;
 
@@ -205,5 +205,14 @@ impl Cpu8086 {
             }
             _ => panic!("Unimplemented ModR/M mode!"),
         }
+    }
+}
+
+#[test]
+fn test_modrm()
+{
+    let mut machine = IbmPc5150Machine::new();
+    for modrm in 0..=0xffu8 {
+        machine.cpu.get_opcode_params_from_modrm(&mut machine.hardware, modrm);
     }
 }
