@@ -1,6 +1,6 @@
-use crate::cpu8086::registers::*;
-use crate::cpu8086::Cpu8086;
-use crate::cpu8086::Cpu8086Context;
+use crate::cpu286::registers::*;
+use crate::cpu286::Cpu286;
+use crate::cpu286::Cpu286Context;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum AddrType {
@@ -35,7 +35,7 @@ pub struct OpcodeParams {
     pub rm: Operand,
 }
 
-impl Cpu8086 {
+impl Cpu286 {
     pub fn get_addr_type_from_modrm(modrm: u8) -> Option<AddrType> {
         let mode = (modrm & 0xc0) >> 6;
         let rm = modrm & 7;
@@ -108,7 +108,7 @@ impl Cpu8086 {
         }
     }
 
-    pub fn get_opcode_params_from_modrm<T: Cpu8086Context>(
+    pub fn get_opcode_params_from_modrm<T: Cpu286Context>(
         &mut self,
         ctx: &mut T,
         modrm: u8,
@@ -119,8 +119,8 @@ impl Cpu8086 {
 
         match mode {
             0 => {
-                let addr_type = Cpu8086::get_addr_type_from_modrm(modrm);
-                let disp_type = Cpu8086::get_disp_type_from_modrm(modrm);
+                let addr_type = Cpu286::get_addr_type_from_modrm(modrm);
+                let disp_type = Cpu286::get_disp_type_from_modrm(modrm);
                 let addr: u16;
                 let displacement: u16;
                 let segment: SegReg = self.get_operand_seg(addr_type, disp_type);
@@ -156,7 +156,7 @@ impl Cpu8086 {
                 }
             }
             1 => {
-                let addr_type = Cpu8086::get_addr_type_from_modrm(modrm);
+                let addr_type = Cpu286::get_addr_type_from_modrm(modrm);
                 let addr: u16;
                 let displacement: u16 =
                     self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip) as u16;
@@ -176,7 +176,7 @@ impl Cpu8086 {
                 }
             }
             2 => {
-                let addr_type = Cpu8086::get_addr_type_from_modrm(modrm);
+                let addr_type = Cpu286::get_addr_type_from_modrm(modrm);
                 let addr: u16;
                 let displacement: u16 =
                     self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
