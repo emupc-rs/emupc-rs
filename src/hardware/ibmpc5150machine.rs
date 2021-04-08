@@ -1,10 +1,12 @@
 use crate::cpu8086::*;
+use crate::hardware::pit::*;
 use std::fs;
 
 #[derive(Clone, Debug, Default)]
 pub struct IbmPc5150Hardware {
     pub ram: Vec<u8>,
     pub bios_rom: Vec<u8>,
+    pub pit: PIT,
 }
 
 impl IbmPc5150Hardware {
@@ -12,7 +14,11 @@ impl IbmPc5150Hardware {
         IbmPc5150Hardware {
             ram: vec![0; 0x10000],
             bios_rom: fs::read("roms/machines/ibmpc/BIOS_5150_24APR81_U33.BIN").unwrap(),
+            pit: PIT::new(),
         }
+    }
+    pub fn tick(&mut self, cycles: usize) {
+        self.pit.tick(cycles);
     }
 }
 

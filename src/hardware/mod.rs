@@ -6,6 +6,7 @@ use crate::ibmpcatmachine::*;
 
 pub mod ibmpc5150machine;
 pub mod ibmpcatmachine;
+pub mod pit;
 
 #[derive(Clone, Debug, Default)]
 pub struct IbmPc5150Machine {
@@ -19,6 +20,9 @@ impl IbmPc5150Machine {
             cpu: Cpu8086::new(),
             hardware: IbmPc5150Hardware::new(),
         }
+    }
+    pub fn tick(&mut self, cycles: usize) {
+        self.hardware.tick(cycles);
     }
 }
 
