@@ -38,9 +38,20 @@ impl<'a> Cpu8086Context for IbmPc5150Hardware {
         }
     }
 
-    fn io_read_byte(&mut self, _addr: u16) -> u8 {
-        0xff
+    fn io_read_byte(&mut self, addr: u16) -> u8 {
+        match addr {
+            0x0040..=0x0043 => self.pit.rb(addr),
+            _ => {
+                println!("Unimplemented IO read");
+                0xff
+            },
+        }
     }
 
-    fn io_write_byte(&mut self, _addr: u16, _value: u8) {}
+    fn io_write_byte(&mut self, addr: u16, value: u8) {
+        match addr {
+            0x0040..=0x0043 => self.pit.wb(addr, value),
+            _ => println!("Unimplemented IO write"),
+        }
+    }
 }
