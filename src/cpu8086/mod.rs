@@ -107,6 +107,41 @@ impl Cpu8086 {
             self.regs.flags.bits()
         );
         match self.opcode {
+            0x00 => {
+                println!("add rm8, reg8");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                let reg_num = (modrm & 0x38) >> 3;
+                let reg = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                let mut rm: u8 = 0;
+                let mut segment_long: SegReg = SegReg::DS;
+                let mut opcode_rm_long: u16 = 0;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    rm = self.regs.read8(Reg8::from_num(opcode_rm).unwrap());
+                } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    rm = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
+                    opcode_rm_long = opcode_rm;
+                    segment_long = segment;
+                }
+                let result = reg.wrapping_add(rm);
+                self.set_pzs8(result);
+                self.regs.flags.set(
+                    Flags::OVERFLOW,
+                    ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                );
+                self.regs
+                    .flags
+                    .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                self.regs
+                    .flags
+                    .set(Flags::CARRY, (rm & 0x80) > (result & 0x80));
+                self.mem_write_byte(ctx, self.regs.readseg16(segment_long), opcode_rm_long, result);
+            },
             0x02 => {
                 println!("add reg8, rm8");
                 let modrm = self.mem_read_byte(
