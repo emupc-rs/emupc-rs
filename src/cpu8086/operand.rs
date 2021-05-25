@@ -209,10 +209,11 @@ impl Cpu8086 {
 }
 
 #[test]
-fn test_modrm()
-{
+fn test_modrm() {
     let mut machine = IbmPc5150Machine::new();
     for modrm in 0..=0xffu8 {
-        machine.cpu.get_opcode_params_from_modrm(&mut machine.hardware, modrm);
+        machine
+            .cpu
+            .get_opcode_params_from_modrm(&mut machine.hardware, modrm);
     }
 }

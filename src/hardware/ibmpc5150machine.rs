@@ -44,7 +44,7 @@ impl<'a> Cpu8086Context for IbmPc5150Hardware {
             _ => {
                 println!("Unimplemented IO read");
                 0xff
-            },
+            }
         }
     }
 

@@ -3,12 +3,10 @@ pub enum AccessMode {
     HighThenLow = 0,
     AlwaysLow = 1,
     AlwaysHigh = 2,
-    LowThenHigh = 3
+    LowThenHigh = 3,
 }
 
-pub enum PitCtrState {
-
-}
+pub enum PitCtrState {}
 
 #[derive(Debug, Clone, Copy)]
 pub struct PitCounter {
@@ -56,13 +54,11 @@ impl PIT {
             3 => {
                 if (data >> 6) == 3 {
                     todo!();
-                }
-                else {
+                } else {
                     self.ctrl = data;
-
                 }
-            },
-            _ => todo!()
+            }
+            _ => todo!(),
         }
     }
 }
