@@ -12,11 +12,18 @@ pub trait Cpu8086Context {
     fn io_write_byte(&mut self, addr: u16, value: u8);
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum RepType {
+    REPE,
+    REPNE
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Cpu8086 {
     pub regs: Registers,
     pub opcode: u8,
     pub seg_override: Option<SegReg>,
+    pub rep_state: Option<RepType>,
 }
 
 impl Cpu8086 {
@@ -25,6 +32,22 @@ impl Cpu8086 {
             regs: Registers::new(),
             opcode: 0,
             seg_override: None,
+            rep_state: None,
+        }
+    }
+    pub fn interrupt_hook<T: Cpu8086Context>(&mut self, ctx: &mut T, intr: u8) {
+        match intr {
+            0x13 => {
+                match self.regs.read8(Reg8::AH) {
+                    0x00 => {
+                        println!("reset disk system");
+                        self.regs.write8(Reg8::AH, 0);
+                        self.regs.flags.set(Flags::Carry, 0);
+                    }
+                    _ => panic!("Unimplmented int 13"),
+                }
+            }
+            _ => panic!("Unimplemented interrupt"),
         }
     }
     pub fn mem_read_byte<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
@@ -1052,6 +1075,40 @@ impl Cpu8086 {
                     .write8(Reg8::AH, (self.regs.flags.bits() & 0xd5) as u8);
                 self.regs.ip = self.regs.ip.wrapping_add(1);
             }
+            0xa0 => {
+                println!("mov al, [imm]");
+                let imm_value = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(3);
+                let mut result: u8 = 0;
+                if let Some(segment) = self.seg_override {
+                    result = self.mem_read_byte(ctx, self.regs.readseg16(segment), imm_value);
+                }
+                else {
+                    result = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::DS), imm_value);
+                }
+                self.regs.write8(Reg8::AL, result);
+            }
+            0xa1 => {
+                println!("mov ax, [imm]");
+                let imm_value = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(3);
+                let mut result: u16 = 0;
+                if let Some(segment) = self.seg_override {
+                    result = self.mem_read_word(ctx, self.regs.readseg16(segment), imm_value);
+                }
+                else {
+                    result = self.mem_read_word(ctx, self.regs.readseg16(SegReg::DS), imm_value);
+                }
+                self.regs.write16(Reg16::AX, result);
+            }
             0xb0 => {
                 println!("mov al, imm");
                 let imm_value = self.mem_read_byte(
@@ -1250,6 +1307,16 @@ impl Cpu8086 {
                     self.regs.write16(Reg16::from_num(reg).unwrap(), addr);
                 }
             }
+            0xcd => {
+                let intr = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                println!("int {:x}", intr);
+                self.interrupt_hook(ctx, intr);
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+            }
             0xd0 => {
                 let modrm = self.mem_read_byte(
                     ctx,
@@ -1370,6 +1437,17 @@ impl Cpu8086 {
                 self.io_write_byte(ctx, imm_value as u16, self.regs.read8(Reg8::AL));
                 self.regs.ip = self.regs.ip.wrapping_add(2);
             }
+            0xe8 => {
+                println!("call near");
+                let offset = self.mem_read_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(ctx, self.regs.readseg16(SegReg::SS), self.regs.read16(Reg16::SP), self.regs.ip);
+                self.regs.ip = self.regs.ip.wrapping_add(offset + 3);
+            }
             0xe9 => {
                 println!("jmp near");
                 let offset = self.mem_read_word(
@@ -1407,6 +1485,18 @@ impl Cpu8086 {
                 println!("out dx, al");
                 self.io_write_byte(ctx, self.regs.read16(Reg16::DX), self.regs.read8(Reg8::AL));
                 self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0xf2 => {
+                println!("repne:");
+                self.rep_state = Some(RepType::REPNE);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.tick(ctx);
+            }
+            0xf3 => {
+                println!("repe:");
+                self.rep_state = Some(RepType::REPE);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+                self.tick(ctx);
             }
             0xf8 => {
                 println!("clc");
