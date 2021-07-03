@@ -18,12 +18,13 @@ pub enum RepType {
     REPNE
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Cpu8086 {
     pub regs: Registers,
     pub opcode: u8,
     pub seg_override: Option<SegReg>,
     pub rep_state: Option<RepType>,
+    pub floppy: Vec<u8>
 }
 
 impl Cpu8086 {
@@ -33,6 +34,7 @@ impl Cpu8086 {
             opcode: 0,
             seg_override: None,
             rep_state: None,
+            floppy: vec![],
         }
     }
     pub fn interrupt_hook<T: Cpu8086Context>(&mut self, ctx: &mut T, intr: u8) {
@@ -42,8 +44,23 @@ impl Cpu8086 {
                     0x00 => {
                         println!("reset disk system");
                         self.regs.write8(Reg8::AH, 0);
-                        self.regs.flags.set(Flags::Carry, 0);
-                    }
+                        self.regs.flags.set(Flags::CARRY, false);
+                    },
+                    0x02 => {
+                        println!("read sectors");
+                        let count: u16 = self.regs.read8(Reg8::AL) as u16;
+                        let sector: u16 = self.regs.read8(Reg8::CL) as u16;
+                        let buf_seg = self.regs.readseg16(SegReg::ES);
+                        let buf_off = self.regs.read16(Reg16::BX);
+                        for i in 0..=(count-1) {
+                            for j in 0..=511 {
+                                self.mem_write_byte(ctx, buf_seg, buf_off + (i*512)+j, self.floppy[(((sector+i)*512)+j) as usize]);
+                            }
+                        }
+                        self.regs.flags.set(Flags::CARRY, false);
+                        self.regs.write8(Reg8::AH, 0);
+                        self.regs.write8(Reg8::AL, count as u8);
+                    },
                     _ => panic!("Unimplmented int 13"),
                 }
             }
@@ -896,10 +913,6 @@ impl Cpu8086 {
                 );
                 self.regs.ip = self.regs.ip.wrapping_add(2);
                 let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
-                match opcode_params.rm {
-                    Operand::Register(_) => (),
-                    _ => panic!("Opcode doesn't support memory operands!"),
-                }
                 let imm: u8 = self.mem_read_byte(
                     ctx,
                     self.regs.readseg16(SegReg::CS),
@@ -908,8 +921,23 @@ impl Cpu8086 {
                 self.regs.ip = self.regs.ip.wrapping_add(1);
                 let group_op = (modrm & 0x38) >> 3;
                 match group_op {
+                    1 => {
+                        println!("or rm8, imm8");
+                        if let Operand::Register(reg_num) = opcode_params.rm {
+                            let reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
+                            let result = reg | imm;
+                            self.set_pzs8(result);
+                            self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
+                        }
+                        if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                            let src = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
+                            let result = src | imm;
+                            self.set_pzs8(result);
+                            self.mem_write_byte(ctx, self.regs.readseg16(segment), opcode_rm, result);
+                        }
+                    }
                     7 => {
-                        println!("cmp reg8, imm8");
+                        println!("cmp rm8, imm8");
                         if let Operand::Register(reg_num) = opcode_params.rm {
                             let reg: u8 = self.regs.read8(Reg8::from_num(reg_num).unwrap());
                             let result = reg.wrapping_sub(imm);
@@ -924,6 +952,21 @@ impl Cpu8086 {
                             self.regs
                                 .flags
                                 .set(Flags::CARRY, (imm & 0x80) > (reg & 0x80));
+                        }
+                        if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                            let src = self.mem_read_byte(ctx, self.regs.readseg16(segment), opcode_rm);
+                            let result = src.wrapping_sub(imm);
+                            self.set_pzs8(result);
+                            self.regs.flags.set(
+                                Flags::OVERFLOW,
+                                ((src ^ imm) & (result ^ src) & 0x80) == 0x80,
+                            );
+                            self.regs
+                                .flags
+                                .set(Flags::ADJUST, ((result ^ src ^ imm) & 0x10) == 0x10);
+                            self.regs
+                                .flags
+                                .set(Flags::CARRY, (imm & 0x80) > (src & 0x80));
                         }
                     }
                     _ => panic!("Unimplemented group opcode!"),

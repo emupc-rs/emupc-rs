@@ -27,6 +27,7 @@ fn main() {
     for i in 0..=511 {
         machine.hardware.ram[i + 0x7c00] = bootsector[i];
     }
+    machine.cpu.floppy = bootsector.clone();
 
     machine.cpu.regs.ip = 0;
     machine.cpu.regs.seg_regs[1] = 0x7c0;
