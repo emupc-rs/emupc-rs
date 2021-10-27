@@ -12,7 +12,7 @@ pub trait Cpu8086Context {
     fn io_write_byte(&mut self, addr: u16, value: u8);
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RepType {
     REPE,
     REPNE
@@ -249,6 +249,24 @@ impl Cpu8086 {
                     .set(Flags::CARRY, (rm & 0x8000) > (result & 0x8000));
                 self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
             }
+            0x06 => {
+                println!("push es");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.readseg16(SegReg::ES),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x07 => {
+                println!("pop es");
+                let es = self.pop16(ctx);
+                self.regs.writeseg16(SegReg::ES, es);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
             0x0a => {
                 println!("or reg8, rm8");
                 let modrm = self.mem_read_byte(
@@ -295,6 +313,50 @@ impl Cpu8086 {
                 self.set_pzs16(result);
                 self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
             }
+            0x13 => {
+                println!("adc reg16, rm16");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                let reg_num = (modrm & 0x38) >> 3;
+                let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
+                let mut rm: u16 = 0;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
+                }
+                let carry: u16 = if self.regs.flags.contains(Flags::CARRY) { 1 } else { 0 };
+                let result = reg.wrapping_add(rm).wrapping_add(carry);
+                self.set_pzs16(result);
+                self.regs.flags.set(
+                    Flags::OVERFLOW,
+                    ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                );
+                self.regs
+                    .flags
+                    .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                self.regs
+                    .flags
+                    .set(Flags::CARRY, (rm & 0x8000) > (result & 0x8000));
+                self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
+            }
+            0x16 => {
+                println!("push ss");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.readseg16(SegReg::SS),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
             0x1e => {
                 println!("push ds");
                 self.regs
@@ -305,6 +367,12 @@ impl Cpu8086 {
                     self.regs.read16(Reg16::SP),
                     self.regs.readseg16(SegReg::DS),
                 );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x1f => {
+                println!("pop ds");
+                let ds = self.pop16(ctx);
+                self.regs.writeseg16(SegReg::DS, ds);
                 self.regs.ip = self.regs.ip.wrapping_add(1);
             }
             0x22 => {
@@ -478,6 +546,40 @@ impl Cpu8086 {
                 self.seg_override = Some(SegReg::SS);
                 self.regs.ip = self.regs.ip.wrapping_add(1);
                 self.tick(ctx);
+            }
+            0x39 => {
+                println!("cmp rm16, reg16");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                let reg_num = (modrm & 0x38) >> 3;
+                let reg = self.regs.read16(Reg16::from_num(reg_num).unwrap());
+                let mut rm: u16 = 0;
+                let mut segment_long: SegReg = SegReg::DS;
+                let mut opcode_rm_long: u16 = 0;
+                if let Operand::Register(opcode_rm) = opcode_params.rm {
+                    rm = self.regs.read16(Reg16::from_num(opcode_rm).unwrap());
+                } else if let Operand::Address(segment, opcode_rm) = opcode_params.rm {
+                    rm = self.mem_read_word(ctx, self.regs.readseg16(segment), opcode_rm);
+                    opcode_rm_long = opcode_rm;
+                    segment_long = segment;
+                }
+                let result = reg.wrapping_sub(rm);
+                self.set_pzs16(result);
+                self.regs.flags.set(
+                    Flags::OVERFLOW,
+                    ((result ^ rm) & (result ^ reg) & 0x80) == 0x80,
+                );
+                self.regs
+                    .flags
+                    .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
+                self.regs
+                    .flags
+                    .set(Flags::CARRY, (rm & 0x80) > (result & 0x80));
             }
             0x3a => {
                 println!("cmp reg8, rm8");
@@ -783,6 +885,103 @@ impl Cpu8086 {
                     .flags
                     .set(Flags::ADJUST, ((result ^ reg ^ 1) & 0x10) == 0x10);
                 self.regs.write16(Reg16::DI, result);
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x50 => {
+                println!("push ax");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::AX),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x51 => {
+                println!("push cx");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::CX),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x52 => {
+                println!("push dx");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::DX),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x53 => {
+                println!("push bx");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::BX),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x54 => {
+                println!("push sp");
+                let sp = self.regs.read16(Reg16::SP);
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    sp,
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x55 => {
+                println!("push bp");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::BP),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x56 => {
+                println!("push si");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::SI),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0x57 => {
+                println!("push di");
+                self.regs
+                    .write16(Reg16::SP, self.regs.read16(Reg16::SP).wrapping_sub(2));
+                self.mem_write_word(
+                    ctx,
+                    self.regs.readseg16(SegReg::SS),
+                    self.regs.read16(Reg16::SP),
+                    self.regs.read16(Reg16::DI),
+                );
                 self.regs.ip = self.regs.ip.wrapping_add(1);
             }
             0x70 => {
@@ -1152,6 +1351,26 @@ impl Cpu8086 {
                 }
                 self.regs.write16(Reg16::AX, result);
             }
+            0xa4 => {
+                println!("movsb");
+                if self.rep_state == None {
+                    let data = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::DS), self.regs.read16(Reg16::SI));
+                    self.mem_write_byte(ctx, self.regs.readseg16(SegReg::ES), self.regs.read16(Reg16::DI), data);
+                    self.regs.write16(Reg16::SI, self.regs.read16(Reg16::SI).wrapping_add(1));
+                    self.regs.write16(Reg16::DI, self.regs.read16(Reg16::DI).wrapping_add(1));
+                }
+                else {
+                    loop {
+                        let data = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::DS), self.regs.read16(Reg16::SI));
+                        self.mem_write_byte(ctx, self.regs.readseg16(SegReg::ES), self.regs.read16(Reg16::DI), data);
+                        self.regs.write16(Reg16::SI, self.regs.read16(Reg16::SI).wrapping_add(1));
+                        self.regs.write16(Reg16::DI, self.regs.read16(Reg16::DI).wrapping_add(1));
+                        self.regs.write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
+                        if self.regs.read16(Reg16::CX) == 0 { break; }
+                    }
+                }
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
             0xb0 => {
                 println!("mov al, imm");
                 let imm_value = self.mem_read_byte(
@@ -1350,6 +1569,44 @@ impl Cpu8086 {
                     self.regs.write16(Reg16::from_num(reg).unwrap(), addr);
                 }
             }
+            0xc6 => {
+                println!("mov rm8, imm");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                match opcode_params.rm {
+                    Operand::Address(_, _) => (),
+                    _ => panic!("Opcode doesn't support register operands!"),
+                }
+                let imm = self.mem_read_byte(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip.wrapping_add(1));
+                if let Operand::Address(easeg, ea) = opcode_params.rm {
+                    self.mem_write_byte(ctx, self.regs.readseg16(easeg), ea, imm);
+                }
+                self.regs.ip = self.regs.ip.wrapping_add(1);
+            }
+            0xc7 => {
+                println!("mov rm16, imm");
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                match opcode_params.rm {
+                    Operand::Address(_, _) => (),
+                    _ => panic!("Opcode doesn't support register operands!"),
+                }
+                let imm = self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip.wrapping_add(1));
+                if let Operand::Address(easeg, ea) = opcode_params.rm {
+                    self.mem_write_word(ctx, self.regs.readseg16(easeg), ea, imm);
+                }
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+            }
             0xcd => {
                 let intr = self.mem_read_byte(
                     ctx,
@@ -1540,6 +1797,40 @@ impl Cpu8086 {
                 self.rep_state = Some(RepType::REPE);
                 self.regs.ip = self.regs.ip.wrapping_add(1);
                 self.tick(ctx);
+            }
+            0xf7 => {
+                let modrm = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS),
+                    self.regs.ip.wrapping_add(1),
+                );
+                self.regs.ip = self.regs.ip.wrapping_add(2);
+                let opcode_params = self.get_opcode_params_from_modrm(ctx, modrm);
+                match opcode_params.rm {
+                    Operand::Address(_, _) => (),
+                    _ => panic!("Register operands not supported yet!"),
+                }
+                let group_op = (modrm & 0x38) >> 3;
+                match group_op {
+                    4 => {
+                        println!("mul rm16");
+                        if let Operand::Address(easeg, ea) = opcode_params.rm {
+                            let reg: u16 = self.regs.read16(Reg16::AX);
+                            let dst: u16 = self.mem_read_word(ctx, self.regs.readseg16(easeg), ea);
+                            let result: u32 = (reg as u32) * (dst as u32);
+                            self.regs.flags.set(
+                                Flags::OVERFLOW,
+                                (result & 0xffff0000u32) != 0,
+                            );
+                            self.regs
+                                .flags
+                                .set(Flags::CARRY, (result & 0xffff0000u32) != 0);
+                            self.regs.write16(Reg16::AX, result as u16);
+                            self.regs.write16(Reg16::DX, (result >> 16) as u16);
+                        }
+                    }
+                    _ => panic!("Unimplemented group opcode!"),
+                }
             }
             0xf8 => {
                 println!("clc");
