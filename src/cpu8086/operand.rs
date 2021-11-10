@@ -180,7 +180,7 @@ impl Cpu8086 {
                 let addr: u16;
                 let displacement: u16 =
                     self.mem_read_word(ctx, self.regs.readseg16(SegReg::CS), self.regs.ip);
-                let segment: SegReg = self.get_operand_seg(addr_type, Some(DisplacementType::Byte));
+                let segment: SegReg = self.get_operand_seg(addr_type, Some(DisplacementType::Word));
                 self.regs.ip = self.regs.ip.wrapping_add(2);
                 match addr_type {
                     None => panic!("Invalid address type for this ModR/M type!"),
