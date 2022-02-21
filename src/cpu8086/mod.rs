@@ -57,8 +57,9 @@ impl Cpu8086 {
                     },
                     0x02 => {
                         println!("read sectors");
-                        let count: u16 = self.regs.read8(Reg8::AL) as u16;
-                        let sector: u16 = self.regs.read8(Reg8::CL) as u16;
+                        let _drive_num = self.regs.read8(Reg8::DL);
+                        let count: u16 = (self.regs.read8(Reg8::AL) & 0x7f) as u16;
+                        let sector: u16 = (self.regs.read8(Reg8::CL).wrapping_sub(1) & 0x3f) as u16;
                         let buf_seg = self.regs.readseg16(SegReg::ES);
                         let buf_off = self.regs.read16(Reg16::BX);
                         for i in 0..=(count-1) {
@@ -67,8 +68,7 @@ impl Cpu8086 {
                             }
                         }
                         self.regs.flags.set(Flags::CARRY, false);
-                        self.regs.write8(Reg8::AH, 0);
-                        self.regs.write8(Reg8::AL, count as u8);
+                        self.regs.write16(Reg16::AX, count);
                     },
                     _ => panic!("Unimplmented int 13"),
                 }
@@ -1490,16 +1490,9 @@ impl Cpu8086 {
                             let result = dst.wrapping_sub(src);
                             let mut offset: i16 = 1;
                             self.set_pzs8(result);
-                            self.regs.flags.set(
-                                Flags::OVERFLOW,
-                                ((result ^ src) & (result ^ dst) & 0x80) == 0x80,
-                            );
                             self.regs
                                 .flags
-                                .set(Flags::ADJUST, ((result ^ src ^ dst) & 0x10) == 0x10);
-                            self.regs
-                                .flags
-                                .set(Flags::CARRY, (dst & 0x80) > (result & 0x80));
+                                .set(Flags::CARRY, (dst & 0x80) > (src & 0x80));
                             if self.regs.flags.contains(Flags::DIRECTION) {
                                 offset = -1;
                             }
@@ -1507,7 +1500,7 @@ impl Cpu8086 {
                             self.regs.write16(Reg16::DI, self.regs.read16(Reg16::DI).wrapping_add(offset as u16));
                             self.regs.write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
                             if self.regs.read16(Reg16::CX) == 0 { break; }
-                            if self.regs.flags.contains(Flags::ZERO) { break; }
+                            if !self.regs.flags.contains(Flags::ZERO) { break; }
                         }
                     }
                     Some(RepType::REPNE) => {
@@ -1534,7 +1527,7 @@ impl Cpu8086 {
                             self.regs.write16(Reg16::DI, self.regs.read16(Reg16::DI).wrapping_add(offset as u16));
                             self.regs.write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
                             if self.regs.read16(Reg16::CX) == 0 { break; }
-                            if !self.regs.flags.contains(Flags::ZERO) { break; }
+                            if self.regs.flags.contains(Flags::ZERO) { break; }
                         }
                     }
                 }

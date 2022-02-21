@@ -39,4 +39,7 @@ impl IbmPcAtMachine {
             hardware: IbmPcAtHardware::new(),
         }
     }
+    pub fn tick(&mut self, cycles: usize) {
+        self.hardware.tick(cycles);
+    }
 }

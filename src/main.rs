@@ -23,7 +23,7 @@ fn main() {
     //scheduler.threads[1].schedule(4, pit_func, &mut machine);
     //scheduler.threads[0].schedule(1, cpu_func, &mut machine.cpu);
 
-    let bootsector: Vec<u8> = fs::read("pcdos100.img").unwrap();
+    let bootsector: Vec<u8> = fs::read("pcdos10.img").unwrap();
     //for i in 0..=511 {
     //    machine.hardware.ram[i + 0x7c00] = bootsector[i];
     //}

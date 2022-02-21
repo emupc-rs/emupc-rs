@@ -27,6 +27,9 @@ impl IbmPcAtHardware {
             },
         }
     }
+    pub fn tick(&mut self, _cycles: usize) {
+
+    }
 }
 
 impl<'a> Cpu286Context for IbmPcAtHardware {

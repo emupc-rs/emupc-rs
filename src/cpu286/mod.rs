@@ -9,10 +9,11 @@ pub trait Cpu286Context {
     fn io_write_byte(&mut self, addr: u16, value: u8);
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Cpu286 {
     pub regs: Registers,
     pub opcode: u8,
+    pub floppy: Vec<u8>,
 }
 
 impl Cpu286 {
@@ -20,6 +21,7 @@ impl Cpu286 {
         Cpu286 {
             regs: Registers::new(),
             opcode: 0,
+            floppy: vec![],
         }
     }
     pub fn mem_read_byte<T: Cpu286Context>(&mut self, ctx: &mut T, addr: u32) -> u8 {
@@ -38,7 +40,7 @@ impl Cpu286 {
         u16::from_le_bytes([lo, hi])
     }
 
-    pub fn tick<T: Cpu286Context>(&mut self, ctx: &mut T) {
+    pub fn tick<T: Cpu286Context>(&mut self, ctx: &mut T) -> usize {
         self.opcode = self.mem_read_byte(
             ctx,
             self.regs.readseg16(SegReg::CS).base + self.regs.ip as u32,
@@ -279,6 +281,15 @@ impl Cpu286 {
                 self.regs.writeseg16(SegReg::CS, segment);
                 self.regs.ip = offset;
             }
+            0xeb => {
+                println!("jmp rel8");
+                let offset = self.mem_read_byte(
+                    ctx,
+                    self.regs.readseg16(SegReg::CS).base +
+                    self.regs.ip.wrapping_add(1) as u32
+                );
+                self.regs.ip = self.regs.ip.wrapping_add((offset as i8 as u16) + 2u16);
+            }
             0xfa => {
                 println!("cli");
                 self.regs.flags.set(Flags::INTERRUPT, false);
@@ -291,5 +302,6 @@ impl Cpu286 {
             }
             _ => panic!("Unhandled opcode!"),
         }
+        2
     }
 }
