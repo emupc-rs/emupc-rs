@@ -43,7 +43,7 @@ impl Cpu8086 {
                 match self.regs.read8(Reg8::AH) {
                     0x0e => {
                         println!("Teletype output");
-                        println!("{}", self.regs.read8(Reg8::AL) as char);
+                        eprint!("{}", self.regs.read8(Reg8::AL) as char);
                     }
                     _ => panic!("Unimplemented int 10"),
                 }
@@ -58,22 +58,29 @@ impl Cpu8086 {
                     0x02 => {
                         println!("read sectors");
                         let _drive_num = self.regs.read8(Reg8::DL);
-                        let count: u16 = (self.regs.read8(Reg8::AL) & 0x7f) as u16;
-                        let sector: u16 = (self.regs.read8(Reg8::CL).wrapping_sub(1) & 0x3f) as u16;
+                        let count: u32 = self.regs.read8(Reg8::AL) as u32;
+                        let head: u32 = self.regs.read8(Reg8::DH) as u32;
+                        let cylinder: u32 = self.regs.read8(Reg8::CH) as u32 | ((self.regs.read8(Reg8::CL) & 0xc0) as u32) << 2 as u32;
+                        let sector: u32 = (self.regs.read8(Reg8::CL) & 0x3f) as u32;
                         let buf_seg = self.regs.readseg16(SegReg::ES);
                         let buf_off = self.regs.read16(Reg16::BX);
                         for i in 0..=(count-1) {
+                            let sectnum = ((cylinder * 2) + head) * 8 + sector + i - 1;
+                            if sectnum >= 320 {
+                                self.regs.flags.set(Flags::CARRY, true);
+                                return;
+                            }
                             for j in 0..=511 {
-                                self.mem_write_byte(ctx, buf_seg, buf_off.wrapping_add((i << 9)+j), self.floppy[(((sector+i)<<9)+j) as usize]);
+                                self.mem_write_byte(ctx, buf_seg, buf_off.wrapping_add(((sectnum << 9)+j) as u16), self.floppy[((sectnum<<9)+j) as usize]);
                             }
                         }
                         self.regs.flags.set(Flags::CARRY, false);
-                        self.regs.write16(Reg16::AX, count);
+                        self.regs.write16(Reg16::AX, count as u16);
                     },
                     _ => panic!("Unimplmented int 13"),
                 }
             }
-            _ => panic!("Unimplemented interrupt"),
+            _ => panic!("Unimplemented interrupt {}", intr),
         }
     }
     pub fn mem_read_byte<T: Cpu8086Context>(&mut self, ctx: &mut T, seg: u16, addr: u16) -> u8 {
@@ -1543,7 +1550,6 @@ impl Cpu8086 {
                         offset = -1;
                     }
                     self.regs.write16(Reg16::SI, self.regs.read16(Reg16::SI).wrapping_add(offset as u16));
-                    self.regs.write16(Reg16::DI, self.regs.read16(Reg16::DI).wrapping_add(offset as u16));
                 }
                 else {
                     loop {
@@ -1554,7 +1560,6 @@ impl Cpu8086 {
                             offset = -1;
                         }
                         self.regs.write16(Reg16::SI, self.regs.read16(Reg16::SI).wrapping_add(offset as u16));
-                        self.regs.write16(Reg16::DI, self.regs.read16(Reg16::DI).wrapping_add(offset as u16));
                         self.regs.write16(Reg16::CX, self.regs.read16(Reg16::CX).wrapping_sub(1));
                         if self.regs.read16(Reg16::CX) == 0 { break; }
                     }
@@ -2179,6 +2184,7 @@ impl Cpu8086 {
             _ => panic!("Unhandled opcode!"),
         }
         self.seg_override = None;
+        self.rep_state = None;
         4
     }
 }
