@@ -30,8 +30,11 @@ fn main() {
     machine.hardware.ram[0x7c00..0x7e00].clone_from_slice(&bootsector[..512]);
     machine.cpu.floppy = bootsector.clone();
 
-    machine.cpu.regs.ip = 0x7c00;
-    machine.cpu.regs.seg_regs[1] = 0;
+    let com: Vec<u8> = fs::read("diamonds.com").unwrap();
+    machine.hardware.ram[0x1000..0x1000+com.len()].copy_from_slice(&com[0..]);
+
+    machine.cpu.regs.ip = 0x0;
+    machine.cpu.regs.seg_regs[1] = 0x100;
 
     loop {
         let cycles: usize = machine.cpu.tick(&mut machine.hardware);
