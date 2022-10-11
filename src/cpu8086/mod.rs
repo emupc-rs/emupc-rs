@@ -78,7 +78,7 @@ impl Cpu8086 {
                             }
                         }
                         self.regs.flags.set(Flags::CARRY, false);
-                        self.regs.write16(Reg16::AX, count as u16);
+                        self.regs.write16(Reg16::AX, count as u8 as u16);
                     },
                     _ => panic!("Unimplmented int 13"),
                 }
@@ -521,7 +521,7 @@ impl Cpu8086 {
                         .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
                     self.regs
                         .flags
-                        .set(Flags::CARRY, (rm & 0x80) > (reg & 0x80));
+                        .set(Flags::CARRY, rm > reg);
                     self.mem_write_byte(
                         ctx,
                         self.regs.readseg16(segment_long),
@@ -558,7 +558,7 @@ impl Cpu8086 {
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
                 self.regs
                     .flags
-                    .set(Flags::CARRY, (rm & 0x80) > (reg & 0x80));
+                    .set(Flags::CARRY, rm > reg);
                 self.regs.write8(Reg8::from_num(reg_num).unwrap(), result);
             }
             0x2b => {
@@ -589,7 +589,7 @@ impl Cpu8086 {
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
                 self.regs
                     .flags
-                    .set(Flags::CARRY, (rm & 0x8000) > (reg & 0x8000));
+                    .set(Flags::CARRY, rm > reg);
                 self.regs.write16(Reg16::from_num(reg_num).unwrap(), result);
             }
             0x2e => {
@@ -717,7 +717,7 @@ impl Cpu8086 {
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
                 self.regs
                     .flags
-                    .set(Flags::CARRY, (rm & 0x80) > (result & 0x80));
+                    .set(Flags::CARRY, rm > result);
             }
             0x3a => {
                 println!("cmp reg8, rm8");
@@ -747,7 +747,7 @@ impl Cpu8086 {
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
                 self.regs
                     .flags
-                    .set(Flags::CARRY, (rm & 0x80) > (reg & 0x80));
+                    .set(Flags::CARRY, rm > reg);
             }
             0x3b => {
                 println!("cmp reg16, rm16");
@@ -777,7 +777,7 @@ impl Cpu8086 {
                     .set(Flags::ADJUST, ((result ^ reg ^ rm) & 0x10) == 0x10);
                 self.regs
                     .flags
-                    .set(Flags::CARRY, (rm & 0x8000) > (reg & 0x8000));
+                    .set(Flags::CARRY, rm > reg);
             }
             0x3e => {
                 println!("ds:");
